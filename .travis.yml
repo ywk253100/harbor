@@ -73,24 +73,24 @@ before_script:
   # - mysql < ./Deploy/db/registry.sql -uroot --verbose
 
 script:
-  - sudo ./tests/testprepare.sh 
-  - docker-compose -f Deploy/docker-compose.test.yml up -d
+  #- sudo ./tests/testprepare.sh 
+  #- docker-compose -f Deploy/docker-compose.test.yml up -d
   - go list ./... | grep -v -E 'vendor|tests' | xargs -L1 fgt golint
   - go list ./... | grep -v -E 'vendor|tests' | xargs -L1 go vet
-  - export MYSQL_HOST=$IP
-  - export REGISTRY_URL=$IP:5000
-  - echo $REGISTRY_URL
-  - ./tests/pushimage.sh 
-  - ./Deploy/coverage4gotest.sh
-  - goveralls -coverprofile=profile.cov -service=travis-ci
+  #- export MYSQL_HOST=$IP
+  #- export REGISTRY_URL=$IP:5000
+  #- echo $REGISTRY_URL
+  #- ./tests/pushimage.sh 
+  #- ./Deploy/coverage4gotest.sh
+  #- goveralls -coverprofile=profile.cov -service=travis-ci
 
-  - docker-compose -f Deploy/docker-compose.test.yml down
+  #- docker-compose -f Deploy/docker-compose.test.yml down
   
-  - docker-compose -f Deploy/docker-compose.yml up -d
+  #- docker-compose -f Deploy/docker-compose.yml up -d
   
-  - docker ps
-  - go run tests/startuptest.go http://localhost/
-  - go run tests/userlogintest.go -name ${HARBOR_ADMIN} -passwd ${HARBOR_ADMIN_PASSWD}
+  #- docker ps
+  #- go run tests/startuptest.go http://localhost/
+  #- go run tests/userlogintest.go -name ${HARBOR_ADMIN} -passwd ${HARBOR_ADMIN_PASSWD}
 
 #  - sudo ./tests/testprepare.sh
 #  - go test -v ./tests/apitests
