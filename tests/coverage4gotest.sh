@@ -20,13 +20,13 @@ function listDeps(){
 	done
 }
 
-packages=$(go list ./... | grep -v -E 'vendor|tests')
+packages=$(go list ./... | grep -v -E 'vendor|tests' | grep ui/api)
 
 for package in $packages
 do
 	listDeps $package
 	
-	go test -cover -coverprofile=profile.tmp -coverpkg "$deps" $package
+	go test -v -cover -coverprofile=profile.tmp -coverpkg "$deps" $package
 	if [ -f profile.tmp ]	
 	then
 		cat profile.tmp | tail -n +2 >> profile.cov

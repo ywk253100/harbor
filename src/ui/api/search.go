@@ -45,6 +45,8 @@ func (s *SearchAPI) Get() {
 		userID = dao.NonExistUserID
 	}
 
+	log.Infof("==================%d", userID)
+
 	keyword := s.GetString("q")
 
 	isSysAdmin, err := dao.IsAdminRole(userID)
