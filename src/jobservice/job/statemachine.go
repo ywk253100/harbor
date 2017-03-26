@@ -285,17 +285,24 @@ func addTestTransition(sm *SM) error {
 }
 
 func addImgTransferTransition(sm *SM) {
-	base := replication.InitBaseHandler(sm.Parms.Repository, sm.Parms.LocalRegURL, config.JobserviceSecret(),
-		sm.Parms.TargetURL, sm.Parms.TargetUsername, sm.Parms.TargetPassword,
-		sm.Parms.Insecure, sm.Parms.Tags, sm.Logger)
+	base := replication.InitBaseHandler(sm.Parms.Repository, sm.Parms.LocalRegURL, 
+		config.JobserviceSecret(),sm.Parms.TargetURL, sm.Parms.TargetUsername, 
+		sm.Parms.TargetPassword,sm.Parms.Insecure, sm.Parms.Tags, sm.Logger)
 
-	sm.AddTransition(models.JobRunning, replication.StateInitialize, &replication.Initializer{BaseHandler: base})
-	sm.AddTransition(replication.StateInitialize, replication.StateCheck, &replication.Checker{BaseHandler: base})
-	sm.AddTransition(replication.StateCheck, replication.StatePullManifest, &replication.ManifestPuller{BaseHandler: base})
-	sm.AddTransition(replication.StatePullManifest, replication.StateTransferBlob, &replication.BlobTransfer{BaseHandler: base})
-	sm.AddTransition(replication.StatePullManifest, models.JobFinished, &StatusUpdater{sm.JobID, models.JobFinished})
-	sm.AddTransition(replication.StateTransferBlob, replication.StatePushManifest, &replication.ManifestPusher{BaseHandler: base})
-	sm.AddTransition(replication.StatePushManifest, replication.StatePullManifest, &replication.ManifestPuller{BaseHandler: base})
+	sm.AddTransition(models.JobRunning, replication.StateInitialize, 
+			 &replication.Initializer{BaseHandler: base})
+	sm.AddTransition(replication.StateInitialize, replication.StateCheck, 
+			 &replication.Checker{BaseHandler: base})
+	sm.AddTransition(replication.StateCheck, replication.StatePullManifest, 
+			 &replication.ManifestPuller{BaseHandler: base})
+	sm.AddTransition(replication.StatePullManifest, replication.StateTransferBlob, 
+			 &replication.BlobTransfer{BaseHandler: base})
+	sm.AddTransition(replication.StatePullManifest, models.JobFinished, 
+			 &StatusUpdater{sm.JobID, models.JobFinished})
+	sm.AddTransition(replication.StateTransferBlob, replication.StatePushManifest, 
+			 &replication.ManifestPusher{BaseHandler: base})
+	sm.AddTransition(replication.StatePushManifest, replication.StatePullManifest, 
+			 &replication.ManifestPuller{BaseHandler: base})
 }
 
 func addImgDeleteTransition(sm *SM) {
