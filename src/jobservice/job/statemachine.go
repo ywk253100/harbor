@@ -95,10 +95,8 @@ func (sm *SM) EnterState(s string) (string, error) {
 // will enter error state if there's more than one possible path when next state is "_continue"
 func (sm *SM) Start(s string) {
 	n, err := sm.EnterState(s)
-	log.Debugf("Job id: %d, next state from handler: %s", sm.JobID, n)
 	for len(n) > 0 && err == nil {
 		if d := sm.getDesiredState(); len(d) > 0 {
-			log.Debugf("Job id: %d. Desired state: %s, will ignore the next state from handler", sm.JobID, d)
 			n = d
 			sm.setDesiredState("")
 			continue
@@ -107,16 +105,10 @@ func (sm *SM) Start(s string) {
 			for n = range sm.Transitions[sm.CurrentState] {
 				break
 			}
-			log.Debugf("Job id: %d, Continue to state: %s", sm.JobID, n)
 			continue
 		}
-		if n == models.JobContinue && len(sm.Transitions[sm.CurrentState]) != 1 {
-			log.Errorf("Job id: %d, next state is continue but there are %d possible next states in transition table", sm.JobID, len(sm.Transitions[sm.CurrentState]))
-			err = fmt.Errorf("Unable to continue")
-			break
-		}
+		...
 		n, err = sm.EnterState(n)
-		log.Debugf("Job id: %d, next state from handler: %s", sm.JobID, n)
 	}
 	if err != nil {
 		log.Warningf("Job id: %d, the statemachin will enter error state due to error: %v", sm.JobID, err)
