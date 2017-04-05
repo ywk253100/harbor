@@ -111,7 +111,6 @@ func (sm *SM) Start(s string) {
 		n, err = sm.EnterState(n)
 	}
 	if err != nil {
-		log.Warningf("Job id: %d, the statemachin will enter error state due to error: %v", sm.JobID, err)
 		sm.EnterState(models.JobError)
 	}
 }
