@@ -82,7 +82,6 @@ script:
   - sudo ./tests/testprepare.sh 
   - sudo docker-compose -f ./make/docker-compose.test.yml up -d
   - docker ps
-  - docker logs make_mysql_1
   - go list ./... | grep -v -E 'vendor|tests' | xargs -L1 fgt golint
   - go list ./... | grep -v -E 'vendor|tests' | xargs -L1 go vet
   - export MYSQL_HOST=$IP
@@ -94,6 +93,7 @@ script:
   - cd .. 
   - go test -i ./src/ui ./src/adminserver ./src/jobservice
   - docker ps
+  - docker logs make_mysql_1
   - sudo -E env "PATH=$PATH" ./tests/coverage4gotest.sh
   - goveralls -coverprofile=profile.cov -service=travis-ci
 
