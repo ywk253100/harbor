@@ -15,10 +15,87 @@
 package db
 
 import (
-	"github.com/vmware/harbor/src/ui/auth"
+	"context"
+	"fmt"
+
+	"github.com/vmware/harbor/src/common"
 	"github.com/vmware/harbor/src/common/dao"
 	"github.com/vmware/harbor/src/common/models"
+	"github.com/vmware/harbor/src/common/utils/log"
+	"github.com/vmware/harbor/src/ui/auth"
 )
+
+// Name of database authenticator
+const Name = "database"
+
+// TODO remove the annotation
+/*
+func init() {
+	auth.Register(Name, &databaseAuthenticatorFactory{})
+}
+*/
+type database struct{}
+
+// Authenticate users with the records in database and add user information
+// into the context
+// paramters contain the princial and credential
+// TODO add test case
+func (d *database) Authenticate(ctx context.Context,
+	parameters map[string]interface{}) (context.Context, error) {
+
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	if parameters == nil {
+		return ctx, fmt.Errorf("parameters should not be null")
+	}
+
+	principal := ""
+	prin, exist := parameters["principal"]
+	if !exist {
+		return ctx, fmt.Errorf("principal should not be null")
+	}
+
+	principal, ok := prin.(string)
+	if !ok {
+		return ctx, fmt.Errorf("principal should be string type")
+	}
+
+	if len(principal) == 0 {
+		return ctx, fmt.Errorf("principal should not be null")
+	}
+
+	credential := ""
+	cred, exist := parameters["credential"]
+	if exist {
+		credential, ok = cred.(string)
+		if !ok {
+			return ctx, fmt.Errorf("credential should be string type")
+		}
+	}
+
+	// TODO refactor AuthModel
+	m := models.AuthModel{
+		Principal: principal,
+		Password:  credential,
+	}
+
+	user, err := dao.LoginByDb(m)
+	if err != nil {
+		return ctx, err
+	}
+
+	ctx = context.WithValue(ctx, common.CtxKeyUser, user)
+	log.Infof("authenticated user %s has been added into context")
+	return ctx, nil
+}
+
+type databaseAuthenticatorFactory struct{}
+
+func (d *databaseAuthenticatorFactory) Create(parameters map[string]interface{}) (auth.Authenticator, error) {
+	return &database{}, nil
+}
 
 // Auth implements Authenticator interface to authenticate user against DB.
 type Auth struct{}
@@ -33,5 +110,5 @@ func (d *Auth) Authenticate(m models.AuthModel) (*models.User, error) {
 }
 
 func init() {
-	auth.Register("db_auth", &Auth{})
+	auth.RegisterOld("db_auth", &Auth{})
 }
