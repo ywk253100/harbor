@@ -23,8 +23,11 @@ import (
 	"github.com/astaxie/beego/validation"
 	"github.com/vmware/harbor/src/common/dao"
 	"github.com/vmware/harbor/src/common/models"
+	"github.com/vmware/harbor/src/common/security"
 	"github.com/vmware/harbor/src/common/utils/log"
 	"github.com/vmware/harbor/src/ui/auth"
+	"github.com/vmware/harbor/src/ui/filter"
+	"github.com/vmware/harbor/src/ui/projectmanager"
 
 	"github.com/astaxie/beego"
 )
@@ -37,6 +40,60 @@ const (
 // BaseAPI wraps common methods for controllers to host API
 type BaseAPI struct {
 	beego.Controller
+	// SecurityCxt is the security context used to authN &authZ
+	SecurityCxt security.Context
+	// ProManager is the project manager which abstracts the operations
+	// related to projects
+	ProManager projectmanager.ProjectManager
+}
+
+// Prepare inits security context and project manager from beego
+// context
+func (b *BaseAPI) Prepare() {
+	ok := false
+	ctx := b.Ctx.Input.GetData(filter.HarborSecurityContext)
+	b.SecurityCxt, ok = ctx.(security.Context)
+	if !ok {
+		log.Error("failed to get security context")
+		b.CustomAbort(http.StatusInternalServerError, "")
+	}
+
+	pm := b.Ctx.Input.GetData(filter.HarborProjectManager)
+	b.ProManager, ok = pm.(projectmanager.ProjectManager)
+	if !ok {
+		log.Error("failed to get project manager")
+		b.CustomAbort(http.StatusInternalServerError, "")
+	}
+}
+
+// HandleNotFound ...
+func (b *BaseAPI) HandleNotFound(text string) {
+	log.Info(text)
+	b.RenderError(http.StatusNotFound, text)
+}
+
+// HandleUnauthorized ...
+func (b *BaseAPI) HandleUnauthorized() {
+	log.Info("unauthorized")
+	b.RenderError(http.StatusUnauthorized, "")
+}
+
+// HandleForbidden ...
+func (b *BaseAPI) HandleForbidden(username string) {
+	log.Info("forbidden: %s", username)
+	b.RenderError(http.StatusForbidden, "")
+}
+
+// HandleBadRequest ...
+func (b *BaseAPI) HandleBadRequest(text string) {
+	log.Info(text)
+	b.RenderError(http.StatusBadRequest, text)
+}
+
+// HandleInternalServerError ...
+func (b *BaseAPI) HandleInternalServerError(text string) {
+	log.Error(text)
+	b.RenderError(http.StatusInternalServerError, "")
 }
 
 // Render returns nil as it won't render template

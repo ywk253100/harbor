@@ -14,9 +14,15 @@
 
 package projectmanager
 
+import (
+	"github.com/vmware/harbor/src/common/models"
+)
+
 // ProjectManager is the project mamager which abstracts the operations related
 // to projects
 type ProjectManager interface {
+	Get(projectIDOrName interface{}) *models.Project
 	IsPublic(projectIDOrName interface{}) bool
+	Exist(projectIDOrName interface{}) bool
 	GetRoles(username string, projectIDOrName interface{}) []int
 }

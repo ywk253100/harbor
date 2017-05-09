@@ -35,7 +35,6 @@ import (
 	"github.com/vmware/harbor/src/common/utils/registry/auth"
 	registry_error "github.com/vmware/harbor/src/common/utils/registry/error"
 	"github.com/vmware/harbor/src/ui/config"
-	svc_utils "github.com/vmware/harbor/src/ui/service/utils"
 )
 
 // RepositoryAPI handles request to /api/repositories /api/repositories/tags /api/repositories/manifests, the parm has to be put
@@ -67,58 +66,52 @@ type manifestResp struct {
 }
 
 // Get ...
-func (ra *RepositoryAPI) Get() {
-	projectID, err := ra.GetInt64("project_id")
+func (r *RepositoryAPI) Get() {
+	projectID, err := r.GetInt64("project_id")
 	if err != nil || projectID <= 0 {
-		ra.CustomAbort(http.StatusBadRequest, "invalid project_id")
+		r.HandleBadRequest(fmt.Sprintf("invalid project_id %s", r.GetString("project_id")))
+		return
 	}
 
-	project, err := dao.GetProjectByID(projectID)
-	if err != nil {
-		log.Errorf("failed to get project %d: %v", projectID, err)
-		ra.CustomAbort(http.StatusInternalServerError, "")
+	if !r.ProManager.Exist(projectID) {
+		r.HandleNotFound(fmt.Sprintf("project %d not found", projectID))
+		return
 	}
 
-	if project == nil {
-		ra.CustomAbort(http.StatusNotFound, fmt.Sprintf("project %d not found", projectID))
-	}
-
-	if project.Public == 0 {
-		var userID int
-
-		if svc_utils.VerifySecret(ra.Ctx.Request, config.JobserviceSecret()) {
-			userID = 1
-		} else {
-			userID = ra.ValidateUser()
+	if !r.ProManager.IsPublic(projectID) {
+		if !r.SecurityCxt.IsAuthenticated() {
+			r.HandleUnauthorized()
+			return
 		}
 
-		if !checkProjectPermission(userID, projectID) {
-			ra.CustomAbort(http.StatusForbidden, "")
+		if !r.SecurityCxt.HasReadPerm(projectID) {
+			r.HandleForbidden(r.SecurityCxt.GetUsername())
+			return
 		}
 	}
 
-	keyword := ra.GetString("q")
+	keyword := r.GetString("q")
 
 	total, err := dao.GetTotalOfRepositoriesByProject(projectID, keyword)
 	if err != nil {
 		log.Errorf("failed to get total of repositories of project %d: %v", projectID, err)
-		ra.CustomAbort(http.StatusInternalServerError, "")
+		r.CustomAbort(http.StatusInternalServerError, "")
 	}
 
-	page, pageSize := ra.GetPaginationParams()
+	page, pageSize := r.GetPaginationParams()
 
-	detail := ra.GetString("detail") == "1" || ra.GetString("detail") == "true"
+	detail := r.GetString("detail") == "1" || r.GetString("detail") == "true"
 
 	repositories, err := getRepositories(projectID,
 		keyword, pageSize, pageSize*(page-1), detail)
 	if err != nil {
 		log.Errorf("failed to get repository: %v", err)
-		ra.CustomAbort(http.StatusInternalServerError, "")
+		r.CustomAbort(http.StatusInternalServerError, "")
 	}
 
-	ra.SetPaginationHeader(total, page, pageSize)
-	ra.Data["json"] = repositories
-	ra.ServeJSON()
+	r.SetPaginationHeader(total, page, pageSize)
+	r.Data["json"] = repositories
+	r.ServeJSON()
 }
 
 func getRepositories(projectID int64, keyword string,
