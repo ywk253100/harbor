@@ -15,6 +15,7 @@
 package filter
 
 import (
+	"context"
 	"strings"
 
 	beegoctx "github.com/astaxie/beego/context"
@@ -28,11 +29,13 @@ import (
 	"github.com/vmware/harbor/src/ui/projectmanager"
 )
 
+type key string
+
 const (
 	// HarborSecurityContext is the name of security context passed to handlers
-	HarborSecurityContext = "harbor_security_context"
+	HarborSecurityContext key = "harbor_security_context"
 	// HarborProjectManager is the name of project manager passed to handlers
-	HarborProjectManager = "harbor_project_manager"
+	HarborProjectManager key = "harbor_project_manager"
 )
 
 // SecurityFilter authenticates the request and passes a security context with it
@@ -60,12 +63,15 @@ func fillContext(ctx *beegoctx.Context) {
 	// secret
 	scrt := ctx.GetCookie("secret")
 	if len(scrt) != 0 {
-		ctx.Input.SetData(HarborProjectManager,
+		ct := context.WithValue(ctx.Request.Context(),
+			HarborProjectManager,
 			getProjectManager(ctx))
 
 		log.Info("creating a secret security context...")
-		ctx.Input.SetData(HarborSecurityContext,
+		ct = context.WithValue(ct, HarborSecurityContext,
 			secret.NewSecurityContext(scrt, config.SecretStore))
+
+		ctx.Request = ctx.Request.WithContext(ct)
 
 		return
 	}
@@ -113,11 +119,12 @@ func fillContext(ctx *beegoctx.Context) {
 	}
 
 	pm := getProjectManager(ctx)
-	ctx.Input.SetData(HarborProjectManager, pm)
+	ct := context.WithValue(ctx.Request.Context(), HarborProjectManager, pm)
 
 	log.Info("creating a rbac security context...")
-	ctx.Input.SetData(HarborSecurityContext,
+	ct = context.WithValue(ct, HarborSecurityContext,
 		rbac.NewSecurityContext(user, pm))
+	ctx.Request = ctx.Request.WithContext(ct)
 
 	return
 }

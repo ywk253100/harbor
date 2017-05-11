@@ -38,14 +38,14 @@ type BaseController struct {
 // context
 func (b *BaseController) Prepare() {
 	ok := false
-	ctx := b.Ctx.Input.GetData(filter.HarborSecurityContext)
+	ctx := b.Ctx.Request.Context().Value(filter.HarborSecurityContext)
 	b.SecurityCxt, ok = ctx.(security.Context)
 	if !ok {
 		log.Error("failed to get security context")
 		b.CustomAbort(http.StatusInternalServerError, "")
 	}
 
-	pm := b.Ctx.Input.GetData(filter.HarborProjectManager)
+	pm := b.Ctx.Request.Context().Value(filter.HarborProjectManager)
 	b.ProManager, ok = pm.(projectmanager.ProjectManager)
 	if !ok {
 		log.Error("failed to get project manager")
