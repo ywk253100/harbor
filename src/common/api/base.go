@@ -80,6 +80,12 @@ func (b *BaseAPI) HandleInternalServerError(text string) {
 	b.RenderError(http.StatusInternalServerError, "")
 }
 
+// HandleConflict ...
+func (b *BaseAPI) HandleConflict(text string) {
+	log.Info(text)
+	b.RenderError(http.StatusConflict, text)
+}
+
 // Render returns nil as it won't render template
 func (b *BaseAPI) Render() error {
 	return nil

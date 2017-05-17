@@ -33,15 +33,6 @@ import (
 	"github.com/vmware/harbor/src/ui/config"
 )
 
-func checkProjectPermission(userID int, projectID int64) bool {
-	roles, err := listRoles(userID, projectID)
-	if err != nil {
-		log.Errorf("error occurred in getProjectPermission: %v", err)
-		return false
-	}
-	return len(roles) > 0
-}
-
 // TODO remove
 func hasProjectAdminRole(userID int, projectID int64) bool {
 	roles, err := listRoles(userID, projectID)

@@ -54,9 +54,9 @@ func DeleteProjectMember(projectID int64, userID int) error {
 }
 
 // GetUserByProject gets all members of the project.
-func GetUserByProject(projectID int64, queryUser models.User) ([]models.User, error) {
+func GetUserByProject(projectID int64, queryUser models.User) ([]*models.User, error) {
 	o := GetOrmer()
-	u := []models.User{}
+	u := []*models.User{}
 	sql := `select u.user_id, u.username, u.creation_time, u.update_time, r.name as rolename, 
 			r.role_id as role
 		from user u 

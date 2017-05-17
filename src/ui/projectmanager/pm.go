@@ -24,7 +24,7 @@ type ProjectManager interface {
 	Get(projectIDOrName interface{}) *models.Project
 	IsPublic(projectIDOrName interface{}) bool
 	Exist(projectIDOrName interface{}) bool
-	GetRoles(username string, projectIDOrName interface{}) []int
+	GetRoles(userIDOrName interface{}, projectIDOrName interface{}) []int
 	// get all public project
 	GetPublic() []*models.Project
 	// get projects which the user is a member of
@@ -42,4 +42,11 @@ type ProjectManager interface {
 	// page, size: pagination parameters
 	GetAll(owner, name, public, member string, role int, page,
 		size int64) ([]*models.Project, int64)
+	//use username to filter the members
+	GetMembers(projectIDOrName interface{}, username ...string) []*models.User
+	GetMember(projectIDOrName interface{}, userIDOrName interface{}) *models.User
+	MemberExist(projectIDOrName interface{}, userIDOrName interface{}) bool
+	AddMember(projectIDOrName interface{}, userIDOrName interface{}, role int) error
+	DeleteMember(projectIDOrName interface{}, userIDOrName interface{}) error
+	UpdateMember(projectIDOrName interface{}, userIDOrName interface{}, role int) error
 }

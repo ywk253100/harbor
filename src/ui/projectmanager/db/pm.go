@@ -68,29 +68,26 @@ func (p *ProjectManager) IsPublic(projectIDOrName interface{}) bool {
 }
 
 // GetRoles return a role list which contains the user's roles to the project
-func (p *ProjectManager) GetRoles(username string, projectIDOrName interface{}) []int {
+func (p *ProjectManager) GetRoles(userIDOrName interface{},
+	projectIDOrName interface{}) []int {
 	roles := []int{}
 
-	user, err := dao.GetUser(models.User{
-		Username: username,
-	})
+	userID, err := p.convertToUserID(userIDOrName)
 	if err != nil {
-		log.Errorf("failed to get user %s: %v", username, err)
-		return roles
-	}
-	if user == nil {
+		log.Errorf("failed to convert %v to user ID: %v", userIDOrName, err)
 		return roles
 	}
 
-	project := p.Get(projectIDOrName)
-	if project == nil {
+	projectID, err := p.convertToProjectID(projectIDOrName)
+	if err != nil {
+		log.Errorf("failed to convert %v to project ID: %v", projectIDOrName, err)
 		return roles
 	}
 
-	roleList, err := dao.GetUserProjectRoles(user.UserID, project.ProjectID)
+	roleList, err := dao.GetUserProjectRoles(userID, projectID)
 	if err != nil {
 		log.Errorf("failed to get roles for user %d to project %d: %v",
-			user.UserID, project.ProjectID, err)
+			userID, projectID, err)
 		return roles
 	}
 
@@ -159,13 +156,9 @@ func (p *ProjectManager) Create(project *models.Project) (int64, error) {
 
 // Delete ...
 func (p *ProjectManager) Delete(projectIDOrName interface{}) error {
-	id, ok := projectIDOrName.(int64)
-	if !ok {
-		project := p.Get(projectIDOrName)
-		if project == nil {
-			return fmt.Errorf(fmt.Sprintf("project %v not found", projectIDOrName))
-		}
-		id = project.ProjectID
+	id, err := p.convertToProjectID(projectIDOrName)
+	if err != nil {
+		return err
 	}
 
 	return dao.DeleteProject(id)
@@ -174,13 +167,9 @@ func (p *ProjectManager) Delete(projectIDOrName interface{}) error {
 // Update ...
 func (p *ProjectManager) Update(projectIDOrName interface{},
 	project *models.Project) error {
-	id, ok := projectIDOrName.(int64)
-	if !ok {
-		pro := p.Get(projectIDOrName)
-		if pro == nil {
-			return fmt.Errorf(fmt.Sprintf("project %v not found", projectIDOrName))
-		}
-		id = pro.ProjectID
+	id, err := p.convertToProjectID(projectIDOrName)
+	if err != nil {
+		return err
 	}
 	return dao.ToggleProjectPublicity(id, project.Public)
 }
@@ -213,4 +202,143 @@ func filter(owner, name, public, member string,
 	}
 
 	return projects
+}
+
+// GetMembers ...
+func (p *ProjectManager) GetMembers(projectIDOrName interface{}, username ...string) []*models.User {
+	id, err := p.convertToProjectID(projectIDOrName)
+	if err != nil {
+		return []*models.User{}
+	}
+
+	filter := models.User{}
+	if len(username) != 0 {
+		filter.Username = username[0]
+	}
+
+	members, err := dao.GetUserByProject(id, filter)
+	if err != nil {
+		return []*models.User{}
+	}
+
+	return members
+}
+
+func (p *ProjectManager) convertToProjectID(projectIDOrName interface{}) (int64, error) {
+	id, ok := projectIDOrName.(int64)
+	if ok {
+		return id, nil
+	}
+	project := p.Get(projectIDOrName)
+	if project == nil {
+		return 0, fmt.Errorf("project %v not found", projectIDOrName)
+	}
+	return project.ProjectID, nil
+}
+
+// GetMember ...
+func (p *ProjectManager) GetMember(projectIDOrName interface{},
+	userIDOrName interface{}) *models.User {
+	roles := p.GetRoles(userIDOrName, projectIDOrName)
+	if len(roles) == 0 {
+		return nil
+	}
+
+	user := models.User{}
+	switch userIDOrName.(type) {
+	case int64:
+		user.UserID = int(userIDOrName.(int64))
+	case int:
+		user.UserID = userIDOrName.(int)
+	default:
+		user.Username = userIDOrName.(string)
+	}
+
+	member, err := dao.GetUser(user)
+	if err != nil {
+		log.Errorf("failed to get user %v: %v", userIDOrName, err)
+		return nil
+	}
+
+	member.Role = roles[0]
+
+	return member
+}
+
+// MemberExist ...
+func (p *ProjectManager) MemberExist(projectIDOrName interface{},
+	userIDOrName interface{}) bool {
+	return len(p.GetRoles(userIDOrName, projectIDOrName)) != 0
+}
+
+// AddMember ...
+func (p *ProjectManager) AddMember(projectIDOrName interface{},
+	userIDOrName interface{}, role int) error {
+	pid, err := p.convertToProjectID(projectIDOrName)
+	if err != nil {
+		return err
+	}
+
+	uid, err := p.convertToUserID(userIDOrName)
+	if err != nil {
+		return err
+	}
+	return dao.AddProjectMember(pid, uid, role)
+}
+
+// DeleteMember ...
+func (p *ProjectManager) DeleteMember(projectIDOrName interface{},
+	userIDOrName interface{}) error {
+	pid, err := p.convertToProjectID(projectIDOrName)
+	if err != nil {
+		return err
+	}
+
+	uid, err := p.convertToUserID(userIDOrName)
+	if err != nil {
+		return err
+	}
+
+	return dao.DeleteProjectMember(pid, uid)
+}
+
+// UpdateMember ...
+func (p *ProjectManager) UpdateMember(projectIDOrName interface{},
+	userIDOrName interface{}, role int) error {
+	pid, err := p.convertToProjectID(projectIDOrName)
+	if err != nil {
+		return err
+	}
+
+	uid, err := p.convertToUserID(userIDOrName)
+	if err != nil {
+		return err
+	}
+
+	return dao.UpdateProjectMember(pid, uid, role)
+}
+
+func (p *ProjectManager) convertToUserID(userIDOrName interface{}) (int, error) {
+	id, ok := userIDOrName.(int)
+	if ok {
+		return id, nil
+	}
+
+	idInt64, ok := userIDOrName.(int64)
+	if ok {
+		return int(idInt64), nil
+	}
+
+	user, err := dao.GetUser(models.User{
+		Username: userIDOrName.(string),
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	if user == nil {
+		return 0, fmt.Errorf("user %v not found", userIDOrName)
+	}
+
+	return user.UserID, nil
 }
