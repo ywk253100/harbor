@@ -16,6 +16,7 @@ package main
 
 import (
 	"github.com/vmware/harbor/src/ui/api"
+	"github.com/vmware/harbor/src/ui/config"
 	"github.com/vmware/harbor/src/ui/controllers"
 	"github.com/vmware/harbor/src/ui/service"
 	"github.com/vmware/harbor/src/ui/service/token"
@@ -62,14 +63,6 @@ func initRouters() {
 
 	//API:
 	beego.Router("/api/search", &api.SearchAPI{})
-	beego.Router("/api/projects/:pid([0-9]+)/members/?:mid", &api.ProjectMemberAPI{})
-	beego.Router("/api/projects/", &api.ProjectAPI{}, "get:List;post:Post;head:Head")
-	beego.Router("/api/projects/:id([0-9]+)", &api.ProjectAPI{})
-	beego.Router("/api/projects/:id([0-9]+)/publicity", &api.ProjectAPI{}, "put:ToggleProjectPublic")
-	beego.Router("/api/projects/:id([0-9]+)/logs/filter", &api.ProjectAPI{}, "post:FilterAccessLog")
-	beego.Router("/api/statistics", &api.StatisticAPI{})
-	beego.Router("/api/users/?:id", &api.UserAPI{})
-	beego.Router("/api/users/:id([0-9]+)/password", &api.UserAPI{}, "put:ChangePassword")
 	beego.Router("/api/internal/syncregistry", &api.InternalAPI{}, "post:SyncRegistry")
 	beego.Router("/api/repositories", &api.RepositoryAPI{}, "get:Get")
 	beego.Router("/api/repositories/*", &api.RepositoryAPI{}, "delete:Delete")
@@ -95,14 +88,25 @@ func initRouters() {
 	beego.Router("/api/logs", &api.LogAPI{})
 	beego.Router("/api/configurations", &api.ConfigAPI{})
 	beego.Router("/api/configurations/reset", &api.ConfigAPI{}, "post:Reset")
-
 	beego.Router("/api/systeminfo", &api.SystemInfoAPI{}, "get:GetGeneralInfo")
 	beego.Router("/api/systeminfo/volumes", &api.SystemInfoAPI{}, "get:GetVolumeInfo")
 	beego.Router("/api/systeminfo/getcert", &api.SystemInfoAPI{}, "get:GetCert")
-	beego.Router("/api/ldap/ping", &api.LdapAPI{}, "post:Ping")
-	beego.Router("/api/ldap/users/search", &api.LdapAPI{}, "post:Search")
-	beego.Router("/api/ldap/users/import", &api.LdapAPI{}, "post:ImportUser")
-	beego.Router("/api/email/ping", &api.EmailAPI{}, "post:Ping")
+	beego.Router("/api/projects/", &api.ProjectAPI{}, "post:Post")
+
+	if !config.WithAdmiral() {
+		beego.Router("/api/projects/:pid([0-9]+)/members/?:mid", &api.ProjectMemberAPI{})
+		beego.Router("/api/projects/", &api.ProjectAPI{}, "get:List;head:Head")
+		beego.Router("/api/projects/:id([0-9]+)", &api.ProjectAPI{})
+		beego.Router("/api/projects/:id([0-9]+)/publicity", &api.ProjectAPI{}, "put:ToggleProjectPublic")
+		beego.Router("/api/projects/:id([0-9]+)/logs/filter", &api.ProjectAPI{}, "post:FilterAccessLog")
+		beego.Router("/api/statistics", &api.StatisticAPI{})
+		beego.Router("/api/users/?:id", &api.UserAPI{})
+		beego.Router("/api/users/:id([0-9]+)/password", &api.UserAPI{}, "put:ChangePassword")
+		beego.Router("/api/ldap/ping", &api.LdapAPI{}, "post:Ping")
+		beego.Router("/api/ldap/users/search", &api.LdapAPI{}, "post:Search")
+		beego.Router("/api/ldap/users/import", &api.LdapAPI{}, "post:ImportUser")
+		beego.Router("/api/email/ping", &api.EmailAPI{}, "post:Ping")
+	}
 
 	//external service that hosted on harbor process:
 	beego.Router("/service/notifications", &service.NotificationHandler{})
