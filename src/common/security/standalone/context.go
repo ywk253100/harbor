@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package rbac
+package standalone
 
 import (
 	"github.com/vmware/harbor/src/common"
