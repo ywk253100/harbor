@@ -26,7 +26,7 @@ for package in $packages
 do
 	listDeps $package
 	
-	LOG_LEVEL=debug go test -cover -coverprofile=profile.tmp -coverpkg "$deps" $package
+	go test -cover -coverprofile=profile.tmp -coverpkg "$deps" $package
 	if [ -f profile.tmp ]	
 	then
 		cat profile.tmp | tail -n +2 >> profile.cov
