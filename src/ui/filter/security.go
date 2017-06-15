@@ -111,7 +111,7 @@ func (s *secretReqCtxModifier) Modify(ctx *beegoctx.Context) bool {
 	if config.WithAdmiral() {
 		// TODO project manager with harbor service accout
 	} else {
-		log.Debug("using db based project manager")
+		log.Debug("using local database project manager")
 		pm = config.GlobalProjectMgr
 	}
 
@@ -152,9 +152,9 @@ func (b *basicAuthReqCtxModifier) Modify(ctx *beegoctx.Context) bool {
 		return false
 	} else {
 		// standalone
-		log.Debug("using db based project manager")
+		log.Debug("using local database project manager")
 		pm = config.GlobalProjectMgr
-		log.Debug("creating a database security context...")
+		log.Debug("creating local database security context...")
 		securCtx = standalone.NewSecurityContext(user, pm)
 	}
 
@@ -171,7 +171,7 @@ func (s *sessionReqCtxModifier) Modify(ctx *beegoctx.Context) bool {
 		return false
 	}
 
-	log.Info("got user information from session")
+	log.Debug("got user information from session")
 	user := &models.User{
 		Username: username.(string),
 	}
@@ -180,9 +180,9 @@ func (s *sessionReqCtxModifier) Modify(ctx *beegoctx.Context) bool {
 		user.HasAdminRole = 1
 	}
 
-	log.Debug("using db based project manager")
+	log.Debug("using local database project manager")
 	pm := config.GlobalProjectMgr
-	log.Debug("creating a database security context...")
+	log.Debug("creating local database security context...")
 	securCtx := standalone.NewSecurityContext(user, pm)
 
 	setSecurCtxAndPM(ctx.Request, securCtx, pm)
@@ -206,9 +206,9 @@ func (t *tokenReqCtxModifier) Modify(ctx *beegoctx.Context) bool {
 		return false
 	}
 
-	log.Debug("creating PMS based project manager...")
+	log.Debug("creating PMS project manager...")
 	pm := pms.NewProjectManager(config.AdmiralEndpoint(), token)
-	log.Debug("creating an integration security context...")
+	log.Debug("creating integration security context...")
 	securCtx := integration.NewSecurityContext(authContext, pm)
 	setSecurCtxAndPM(ctx.Request, securCtx, pm)
 
@@ -219,21 +219,21 @@ func (t *tokenReqCtxModifier) Modify(ctx *beegoctx.Context) bool {
 type unauthorizedReqCtxModifier struct{}
 
 func (u *unauthorizedReqCtxModifier) Modify(ctx *beegoctx.Context) bool {
-	log.Info("user information is nil")
+	log.Debug("user information is nil")
 
 	var securCtx security.Context
 	var pm projectmanager.ProjectManager
 	if config.WithAdmiral() {
 		// integration
-		log.Debug("creating PMS based project manager...")
+		log.Debug("creating PMS project manager...")
 		pm = pms.NewProjectManager(config.AdmiralEndpoint(), "")
-		log.Debug("creating an integration security context...")
+		log.Debug("creating integration security context...")
 		securCtx = integration.NewSecurityContext(nil, pm)
 	} else {
 		// standalone
-		log.Debug("using db based project manager")
+		log.Debug("using local database project manager")
 		pm = config.GlobalProjectMgr
-		log.Debug("creating a database security context...")
+		log.Debug("creating local database security context...")
 		securCtx = standalone.NewSecurityContext(nil, pm)
 	}
 	setSecurCtxAndPM(ctx.Request, securCtx, pm)
@@ -246,7 +246,7 @@ func setSecurCtxAndPM(req *http.Request, ctx security.Context, pm projectmanager
 }
 
 func addToReqContext(req *http.Request, key, value interface{}) {
-	req = req.WithContext(context.WithValue(req.Context(), key, value))
+	*req = *(req.WithContext(context.WithValue(req.Context(), key, value)))
 }
 
 // GetSecurityContext tries to get security context from request and returns it
