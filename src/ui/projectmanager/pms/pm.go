@@ -97,7 +97,7 @@ func (p *ProjectManager) get(projectIDOrName interface{}) (*project, error) {
 	}
 
 	if len(projects) != 1 {
-		return nil, fmt.Errorf("unexpected size of project list: %d != 1", len(projects))
+		return nil, fmt.Errorf("unexpected size of project list: %d != 1, %v", len(projects), projects)
 	}
 
 	return projects[0], nil
