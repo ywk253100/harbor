@@ -36,6 +36,7 @@ import (
 	"github.com/vmware/harbor/src/common/utils/registry/auth"
 	"github.com/vmware/harbor/src/ui/config"
 	"github.com/vmware/harbor/src/ui/projectmanager"
+	"github.com/vmware/harbor/src/ui/service/token"
 	uiutils "github.com/vmware/harbor/src/ui/utils"
 )
 
@@ -380,9 +381,11 @@ func initRegistryClient() (r *registry.Registry, err error) {
 		return nil, err
 	}
 
-	// TODO
-	token := ""
-	authorizer := auth.NewRawTokenAuthorizer(token)
+	token, err := token.RegistryTokenForUI("harbor-ui", "harbor-registry", []string{"registry:catalog:*"})
+	if err != nil {
+		return nil, err
+	}
+	authorizer := auth.NewRawTokenAuthorizer(token.Token)
 	return registry.NewRegistryWithModifiers(endpoint, true, authorizer)
 }
 

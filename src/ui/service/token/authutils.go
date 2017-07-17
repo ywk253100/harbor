@@ -97,20 +97,25 @@ func filterAccess(access []*token.ResourceActions, ctx security.Context,
 // to one function
 
 //RegistryTokenForUI calls genTokenForUI to get raw token for registry
-func RegistryTokenForUI(username string, service string, scopes []string) (string, int, *time.Time, error) {
+func RegistryTokenForUI(username string, service string, scopes []string) (*models.Token, error) {
 	return genTokenForUI(username, service, scopes)
 }
 
 //NotaryTokenForUI calls genTokenForUI to get raw token for notary
-func NotaryTokenForUI(username string, service string, scopes []string) (string, int, *time.Time, error) {
+func NotaryTokenForUI(username string, service string, scopes []string) (*models.Token, error) {
 	return genTokenForUI(username, service, scopes)
 }
 
 // genTokenForUI is for the UI process to call, so it won't establish a https connection from UI to proxy.
 func genTokenForUI(username string, service string,
-	scopes []string) (string, int, *time.Time, error) {
+	scopes []string) (*models.Token, error) {
 	access := GetResourceActions(scopes)
-	return MakeRawToken(username, service, access)
+	token, expiresIn, issuedAt, err := MakeRawToken(username, service, access)
+	return &models.Token{
+		Token:     token,
+		ExpiresIn: expiresIn,
+		IssuedAt:  issuedAt.UTC().String(),
+	}, err
 }
 
 // MakeRawToken makes a valid jwt token based on parms.

@@ -29,6 +29,7 @@ import (
 	"github.com/vmware/harbor/src/common/utils/registry"
 	"github.com/vmware/harbor/src/common/utils/registry/auth"
 	"github.com/vmware/harbor/src/ui/config"
+	"github.com/vmware/harbor/src/ui/service/token"
 
 	"github.com/opencontainers/go-digest"
 )
@@ -74,9 +75,11 @@ func GetInternalTargets(notaryEndpoint string, username string, repo string) ([]
 // like "10.117.4.117/library/ubuntu", instead of "library/ubuntu" (fqRepo for fully-qualified repo)
 func GetTargets(notaryEndpoint string, username string, fqRepo string) ([]Target, error) {
 	res := []Target{}
-	// TODO
-	token := ""
-	authorizer := auth.NewRawTokenAuthorizer(token)
+	token, err := token.RegistryTokenForUI(username, "harbor-notary", []string{fmt.Sprintf("repository:%s:pull", fqRepo)})
+	if err != nil {
+		return nil, err
+	}
+	authorizer := auth.NewRawTokenAuthorizer(token.Token)
 	tr := registry.NewTransport(registry.GetHTTPTransport(true), authorizer)
 	gun := data.GUN(fqRepo)
 	notaryRepo, err := client.NewFileCachedNotaryRepository(notaryCachePath, gun, notaryEndpoint, tr, mockRetriever, trustPin)
