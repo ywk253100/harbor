@@ -83,7 +83,8 @@ func NewStandardTokenAuthorizer(credential Credential, insecure bool,
 			Transport: registry.GetHTTPTransport(insecure),
 			Timeout:   30 * time.Second,
 		},
-		credential: credential,
+		credential:   credential,
+		cachedTokens: make(map[string]*models.Token),
 	}
 
 	if len(customizedTokenService) > 0 {
@@ -130,7 +131,7 @@ func (s *standardTokenAuthorizer) Modify(req *http.Request) error {
 	var token *models.Token
 	// try to get token from cache if the request is for single scope
 	if len(scopes) == 1 {
-		token = s.getCachedToken(scope)
+		token = s.getCachedToken(scopes[0])
 	}
 
 	// request a new token if token is null
@@ -173,7 +174,7 @@ func (s *standardTokenAuthorizer) getCachedToken(scope *Scope) *models.Token {
 		return nil
 	}
 
-	issueAt, err := time.Parse(time.RFC3339, token.IssuedAt)
+	issueAt, err := time.Parse("2006-01-02 15:04:05.999999999 -0700 MST", token.IssuedAt)
 	if err != nil {
 		log.Errorf("failed parse %s: %v", token.IssuedAt, err)
 		return nil
@@ -183,6 +184,7 @@ func (s *standardTokenAuthorizer) getCachedToken(scope *Scope) *models.Token {
 		return nil
 	}
 
+	log.Debug("get token from cache")
 	return token
 }
 
