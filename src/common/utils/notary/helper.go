@@ -74,12 +74,10 @@ func GetInternalTargets(notaryEndpoint string, username string, repo string) ([]
 // like "10.117.4.117/library/ubuntu", instead of "library/ubuntu" (fqRepo for fully-qualified repo)
 func GetTargets(notaryEndpoint string, username string, fqRepo string) ([]Target, error) {
 	res := []Target{}
-	authorizer := auth.NewNotaryUsernameTokenAuthorizer(username, "repository", fqRepo, "pull")
-	store, err := auth.NewAuthorizerStore(strings.Split(notaryEndpoint, "//")[1], true, authorizer)
-	if err != nil {
-		return res, err
-	}
-	tr := registry.NewTransport(registry.GetHTTPTransport(true), store)
+	// TODO
+	token := ""
+	authorizer := auth.NewRawTokenAuthorizer(token)
+	tr := registry.NewTransport(registry.GetHTTPTransport(true), authorizer)
 	gun := data.GUN(fqRepo)
 	notaryRepo, err := client.NewFileCachedNotaryRepository(notaryCachePath, gun, notaryEndpoint, tr, mockRetriever, trustPin)
 	if err != nil {

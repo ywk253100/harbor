@@ -557,13 +557,9 @@ func getManifest(client *registry.Repository,
 	return result, nil
 }
 
+// TODO remove
 func (ra *RepositoryAPI) initRepositoryClient(repoName string) (r *registry.Repository, err error) {
-	endpoint, err := config.RegistryURL()
-	if err != nil {
-		return nil, err
-	}
-
-	return uiutils.NewRepositoryClientForUI(endpoint, true, ra.SecurityCtx.GetUsername(),
+	return uiutils.NewRepositoryClientForUI(ra.SecurityCtx.GetUsername(),
 		repoName, "pull", "push", "*")
 }
 

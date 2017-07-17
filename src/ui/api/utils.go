@@ -281,12 +281,7 @@ func diffRepos(reposInRegistry []string, reposInDB []string,
 			}
 
 			// TODO remove the workaround when the bug of registry is fixed
-			endpoint, err := config.RegistryURL()
-			if err != nil {
-				return needsAdd, needsDel, err
-			}
-			client, err := uiutils.NewRepositoryClientForUI(endpoint, true,
-				"admin", repoInR, "pull")
+			client, err := uiutils.NewRepositoryClientForUI("admin", repoInR, "pull")
 			if err != nil {
 				return needsAdd, needsDel, err
 			}
@@ -306,11 +301,7 @@ func diffRepos(reposInRegistry []string, reposInDB []string,
 			j++
 		} else {
 			// TODO remove the workaround when the bug of registry is fixed
-			endpoint, err := config.RegistryURL()
-			if err != nil {
-				return needsAdd, needsDel, err
-			}
-			client, err := uiutils.NewRepositoryClientForUI(endpoint, true, "admin", repoInR, "pull")
+			client, err := uiutils.NewRepositoryClientForUI("admin", repoInR, "pull")
 			if err != nil {
 				return needsAdd, needsDel, err
 			}
@@ -342,12 +333,7 @@ func diffRepos(reposInRegistry []string, reposInDB []string,
 			continue
 		}
 
-		endpoint, err := config.RegistryURL()
-		if err != nil {
-			log.Errorf("failed to get registry URL: %v", err)
-			continue
-		}
-		client, err := uiutils.NewRepositoryClientForUI(endpoint, true, "admin", repoInR, "pull")
+		client, err := uiutils.NewRepositoryClientForUI("admin", repoInR, "pull")
 		if err != nil {
 			log.Errorf("failed to create repository client: %v", err)
 			continue
@@ -379,7 +365,6 @@ func projectExists(pm projectmanager.ProjectManager, repository string) (bool, e
 	return pm.Exist(project)
 }
 
-// TODO need a registry client which accept a raw token as param
 func initRegistryClient() (r *registry.Registry, err error) {
 	endpoint, err := config.RegistryURL()
 	if err != nil {
@@ -395,12 +380,10 @@ func initRegistryClient() (r *registry.Registry, err error) {
 		return nil, err
 	}
 
-	registryClient, err := NewRegistryClient(endpoint, true, "admin",
-		"registry", "catalog", "*")
-	if err != nil {
-		return nil, err
-	}
-	return registryClient, nil
+	// TODO
+	token := ""
+	authorizer := auth.NewRawTokenAuthorizer(token)
+	return registry.NewRegistryWithModifiers(endpoint, true, authorizer)
 }
 
 func buildReplicationURL() string {
@@ -449,24 +432,6 @@ func repositoryExist(name string, client *registry.Repository) (bool, error) {
 		return false, err
 	}
 	return len(tags) != 0, nil
-}
-
-// NewRegistryClient ...
-// TODO need a registry client which accept a raw token as param
-func NewRegistryClient(endpoint string, insecure bool, username, scopeType, scopeName string,
-	scopeActions ...string) (*registry.Registry, error) {
-	authorizer := auth.NewRegistryUsernameTokenAuthorizer(username, scopeType, scopeName, scopeActions...)
-
-	store, err := auth.NewAuthorizerStore(endpoint, insecure, authorizer)
-	if err != nil {
-		return nil, err
-	}
-
-	client, err := registry.NewRegistryWithModifiers(endpoint, insecure, store)
-	if err != nil {
-		return nil, err
-	}
-	return client, nil
 }
 
 // transformVulnerabilities transforms the returned value of Clair API to a list of VulnerabilityItem

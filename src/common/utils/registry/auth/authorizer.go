@@ -14,6 +14,7 @@
 
 package auth
 
+/*
 import (
 	"fmt"
 	"net/http"
@@ -70,10 +71,6 @@ func NewAuthorizerStore(endpoint string, insecure bool, authorizers ...Authorize
 	}, nil
 }
 
-func buildPingURL(endpoint string) string {
-	return fmt.Sprintf("%s/v2/", endpoint)
-}
-
 // Modify adds authorization to the request
 func (a *AuthorizerStore) Modify(req *http.Request) error {
 	//only handle the requests sent to registry
@@ -105,3 +102,4 @@ func (a *AuthorizerStore) Modify(req *http.Request) error {
 
 	return nil
 }
+*/

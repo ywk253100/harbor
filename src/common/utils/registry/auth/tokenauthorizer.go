@@ -17,16 +17,20 @@ package auth
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/vmware/harbor/src/common/models"
+	"github.com/vmware/harbor/src/common/utils"
+	"github.com/vmware/harbor/src/common/utils/log"
 	"github.com/vmware/harbor/src/common/utils/registry"
-	token_util "github.com/vmware/harbor/src/ui/service/token"
 )
 
 const (
 	latency int = 10 //second, the network latency when token is received
+	scheme      = "bearer"
 )
 
 // Scope ...
@@ -40,96 +44,32 @@ func (s *Scope) string() string {
 	return fmt.Sprintf("%s:%s:%s", s.Type, s.Name, strings.Join(s.Actions, ","))
 }
 
-type tokenGenerator func(realm, service string, scopes []string) (token string, expiresIn int, issuedAt *time.Time, err error)
-
-// Implements interface Authorizer
-type tokenAuthorizer struct {
-	scope     *Scope
-	tg        tokenGenerator
-	cache     string     // cached token
-	expiresAt *time.Time // The UTC standard time at when the token will expire
-	sync.Mutex
+type rawTokenAuthorizer struct {
+	token string
 }
 
-// Scheme returns the scheme that the handler can handle
-func (t *tokenAuthorizer) Scheme() string {
-	return "bearer"
+// NewRawTokenAuthorizer returns an instance of rawTokenAuthorizer
+func NewRawTokenAuthorizer(token string) registry.Modifier {
+	return &rawTokenAuthorizer{
+		token: token,
+	}
 }
 
-// AuthorizeRequest will add authorization header which contains a token before the request is sent
-func (t *tokenAuthorizer) Authorize(req *http.Request, params map[string]string) error {
-	var scopes []*Scope
-	var token string
-
-	hasFrom := false
-	from := req.URL.Query().Get("from")
-	if len(from) != 0 {
-		s := &Scope{
-			Type:    "repository",
-			Name:    from,
-			Actions: []string{"pull"},
-		}
-		scopes = append(scopes, s)
-		// do not cache the token if "from" appears
-		hasFrom = true
-	}
-
-	if t.scope != nil {
-		scopes = append(scopes, t.scope)
-	}
-
-	expired := true
-
-	cachedToken, cachedExpiredAt := t.getCachedToken()
-
-	if len(cachedToken) != 0 && cachedExpiredAt != nil {
-		expired = cachedExpiredAt.Before(time.Now().UTC())
-	}
-
-	if expired || hasFrom {
-		scopeStrs := []string{}
-		for _, scope := range scopes {
-			scopeStrs = append(scopeStrs, scope.string())
-		}
-		to, expiresIn, _, err := t.tg(params["realm"], params["service"], scopeStrs)
-		if err != nil {
-			return err
-		}
-		token = to
-
-		if !hasFrom {
-			t.updateCachedToken(to, expiresIn)
-		}
-	} else {
-		token = cachedToken
-	}
-
-	req.Header.Add(http.CanonicalHeaderKey("Authorization"), fmt.Sprintf("Bearer %s", token))
-
+func (r rawTokenAuthorizer) Modify(req *http.Request) error {
+	req.Header.Add(http.CanonicalHeaderKey("Authorization"), fmt.Sprintf("Bearer %s", r.token))
 	return nil
-}
-
-func (t *tokenAuthorizer) getCachedToken() (string, *time.Time) {
-	t.Lock()
-	defer t.Unlock()
-	return t.cache, t.expiresAt
-}
-
-func (t *tokenAuthorizer) updateCachedToken(token string, expiresIn int) {
-	t.Lock()
-	defer t.Unlock()
-	t.cache = token
-	n := (time.Duration)(expiresIn - latency)
-	e := time.Now().Add(n * time.Second).UTC()
-	t.expiresAt = &e
 }
 
 // Implements interface Authorizer
 type standardTokenAuthorizer struct {
-	tokenAuthorizer
-	client               *http.Client
-	credential           Credential
-	tokenServiceEndpoint string
+	realm                  string
+	service                string
+	customizedTokenService string
+	registryURL            *url.URL // used to filter request
+	cachedTokens           map[string]*models.Token
+	client                 *http.Client
+	credential             Credential
+	sync.RWMutex
 }
 
 // NewStandardTokenAuthorizer returns a standard token authorizer. The authorizer will request a token
@@ -137,47 +77,154 @@ type standardTokenAuthorizer struct {
 // If tokenServiceEndpoint is set, the token request will be sent to it instead of the server get from authorizer
 // The usage please refer to the function tokenURL
 func NewStandardTokenAuthorizer(credential Credential, insecure bool,
-	tokenServiceEndpoint string, scopeType, scopeName string, scopeActions ...string) Authorizer {
+	customizedTokenService ...string) registry.Modifier {
 	authorizer := &standardTokenAuthorizer{
 		client: &http.Client{
 			Transport: registry.GetHTTPTransport(insecure),
 			Timeout:   30 * time.Second,
 		},
-		credential:           credential,
-		tokenServiceEndpoint: tokenServiceEndpoint,
+		credential: credential,
 	}
 
-	if len(scopeType) != 0 || len(scopeName) != 0 {
-		authorizer.scope = &Scope{
-			Type:    scopeType,
-			Name:    scopeName,
-			Actions: scopeActions,
-		}
+	if len(customizedTokenService) > 0 {
+		authorizer.customizedTokenService = customizedTokenService[0]
 	}
-
-	authorizer.tg = authorizer.generateToken
 
 	return authorizer
 }
 
-func (s *standardTokenAuthorizer) generateToken(realm, service string, scopes []string) (string, int, *time.Time, error) {
-	realm = s.tokenURL(realm)
-	tk, err := getToken(s.client, s.credential, realm,
-		service, scopes)
+func (s *standardTokenAuthorizer) Modify(req *http.Request) error {
+	// ping first if registry URL, realm or service is null
+	if s.registryURL == nil || len(s.realm) == 0 || len(s.service) == 0 {
+		if err := s.ping(req.URL.Scheme + req.URL.Host); err != nil {
+			return err
+		}
+	}
+
+	//only handle requests sent to registry
+	goon, err := s.filterReq(req)
 	if err != nil {
-		return "", 0, nil, err
+		return err
+	}
+	if !goon {
+		log.Debugf("the request %s is not sent to registry, skip", req.URL.String())
+		return nil
 	}
 
-	if len(tk.IssuedAt) == 0 {
-		return tk.Token, tk.ExpiresIn, nil, nil
-	}
-
-	issuedAt, err := time.Parse(time.RFC3339, tk.IssuedAt)
+	scopes := []*Scope{}
+	scope, err := parseScope(req)
 	if err != nil {
-		return "", 0, nil, err
+		return err
+	}
+	scopes = append(scopes, scope)
+
+	from := req.URL.Query().Get("from")
+	if len(from) != 0 {
+		scopes = append(scopes, &Scope{
+			Type:    "repository",
+			Name:    from,
+			Actions: []string{"pull"},
+		})
 	}
 
-	return tk.Token, tk.ExpiresIn, &issuedAt, nil
+	var token *models.Token
+	// try to get token from cache if the request is for single scope
+	if len(scopes) == 1 {
+		token = s.getCachedToken(scope)
+	}
+
+	// request a new token if token is null
+	if token == nil {
+		token, err = s.requestToken(scopes)
+		if err != nil {
+			return err
+		}
+		// only cache the token for single scope request
+		if len(scopes) == 1 {
+			s.updateCachedToken(scopes[0], token)
+		}
+	}
+
+	req.Header.Add(http.CanonicalHeaderKey("Authorization"), fmt.Sprintf("Bearer %s", token.Token))
+
+	return nil
+}
+
+// only handle requests sent to registry
+func (s *standardTokenAuthorizer) filterReq(req *http.Request) (bool, error) {
+	v2Index := strings.Index(req.URL.Path, "/v2/")
+	if v2Index == -1 {
+		return false, nil
+	}
+
+	if req.URL.Host != s.registryURL.Host || req.URL.Scheme != s.registryURL.Scheme ||
+		req.URL.Path[:v2Index+4] != s.registryURL.Path {
+		return false, nil
+	}
+
+	return true, nil
+}
+
+func (s *standardTokenAuthorizer) getCachedToken(scope *Scope) *models.Token {
+	s.RLock()
+	defer s.RUnlock()
+	token := s.cachedTokens[scope.string()]
+	if token == nil {
+		return nil
+	}
+
+	issueAt, err := time.Parse(time.RFC3339, token.IssuedAt)
+	if err != nil {
+		log.Errorf("failed parse %s: %v", token.IssuedAt, err)
+		return nil
+	}
+
+	if issueAt.Add(time.Duration(token.ExpiresIn-latency) * time.Second).Before(time.Now().UTC()) {
+		return nil
+	}
+
+	return token
+}
+
+func (s *standardTokenAuthorizer) updateCachedToken(scope *Scope, token *models.Token) {
+	s.Lock()
+	defer s.Unlock()
+	s.cachedTokens[scope.string()] = token
+}
+
+func (s *standardTokenAuthorizer) requestToken(scopes []*Scope) (*models.Token, error) {
+	realm := s.tokenServiceURL()
+	return getToken(s.client, s.credential, realm, s.service, scopes)
+}
+
+// TODO
+func parseScope(req *http.Request) (*Scope, error) {
+	return nil, nil
+}
+
+func (s *standardTokenAuthorizer) ping(endpoint string) error {
+	pingURL := buildPingURL(utils.FormatEndpoint(endpoint))
+	resp, err := s.client.Get(pingURL)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	ping, err := url.Parse(pingURL)
+	if err != nil {
+		return err
+	}
+	s.registryURL = ping
+
+	challenges := ParseChallengeFromResponse(resp)
+	for _, challenge := range challenges {
+		if scheme == challenge.Scheme {
+			s.realm = challenge.Parameters["realm"]
+			s.service = challenge.Parameters["service"]
+			return nil
+		}
+	}
+	return fmt.Errorf("%s is unsupportted", scheme)
 }
 
 // when the registry client is used inside Harbor, the token request
@@ -187,62 +234,13 @@ func (s *standardTokenAuthorizer) generateToken(realm, service string, scopes []
 // 1. performance issue
 // 2. the realm field returned by registry is an IP which can not reachable
 // inside Harbor
-func (s *standardTokenAuthorizer) tokenURL(realm string) string {
-	if len(s.tokenServiceEndpoint) != 0 {
-		return s.tokenServiceEndpoint
+func (s *standardTokenAuthorizer) tokenServiceURL() string {
+	if len(s.customizedTokenService) != 0 {
+		return s.customizedTokenService
 	}
-	return realm
+	return s.realm
 }
 
-// Implements interface Handler
-type usernameTokenAuthorizer struct {
-	tokenAuthorizer
-	username string
-}
-
-// NewRegistryUsernameTokenAuthorizer returns an authorizer to generate token for registry according to
-// the user's privileges
-func NewRegistryUsernameTokenAuthorizer(username, scopeType, scopeName string, scopeActions ...string) Authorizer {
-	return newUsernameTokenAuthorizer(false, username, scopeType, scopeName, scopeActions...)
-}
-
-// NewNotaryUsernameTokenAuthorizer returns an authorizer to generate token for notary according to
-// the user's privileges
-func NewNotaryUsernameTokenAuthorizer(username, scopeType, scopeName string, scopeActions ...string) Authorizer {
-	return newUsernameTokenAuthorizer(true, username, scopeType, scopeName, scopeActions...)
-}
-
-// newUsernameTokenAuthorizer returns a authorizer which will generate a token according to
-// the user's privileges
-func newUsernameTokenAuthorizer(notary bool, username, scopeType, scopeName string, scopeActions ...string) Authorizer {
-	authorizer := &usernameTokenAuthorizer{
-		username: username,
-	}
-
-	authorizer.scope = &Scope{
-		Type:    scopeType,
-		Name:    scopeName,
-		Actions: scopeActions,
-	}
-	if notary {
-		authorizer.tg = authorizer.genNotaryToken
-	} else {
-		authorizer.tg = authorizer.genRegistryToken
-	}
-	return authorizer
-}
-
-func (u *usernameTokenAuthorizer) generateToken(realm, service string, scopes []string) (token string, expiresIn int, issuedAt *time.Time, err error) {
-	token, expiresIn, issuedAt, err = token_util.RegistryTokenForUI(u.username, service, scopes)
-	return
-}
-
-func (u *usernameTokenAuthorizer) genRegistryToken(realm, service string, scopes []string) (token string, expiresIn int, issuedAt *time.Time, err error) {
-	token, expiresIn, issuedAt, err = token_util.RegistryTokenForUI(u.username, service, scopes)
-	return
-}
-
-func (u *usernameTokenAuthorizer) genNotaryToken(realm, service string, scopes []string) (token string, expiresIn int, issuedAt *time.Time, err error) {
-	token, expiresIn, issuedAt, err = token_util.NotaryTokenForUI(u.username, service, scopes)
-	return
+func buildPingURL(endpoint string) string {
+	return fmt.Sprintf("%s/v2/", endpoint)
 }
