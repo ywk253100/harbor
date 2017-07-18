@@ -113,11 +113,7 @@ func (s *standardTokenAuthorizer) Modify(req *http.Request) error {
 	}
 
 	scopes := []*Scope{}
-	scope, err := parseScope(req)
-	if err != nil {
-		return err
-	}
-	scopes = append(scopes, scope)
+	scopes = append(scopes, parseScope(req))
 
 	from := req.URL.Query().Get("from")
 	if len(from) != 0 {
@@ -129,9 +125,14 @@ func (s *standardTokenAuthorizer) Modify(req *http.Request) error {
 	}
 
 	var token *models.Token
-	// try to get token from cache if the request is for single scope
-	if len(scopes) == 1 {
-		token = s.getCachedToken(scopes[0])
+	// try to get token from cache if the request is for no scope(ping)
+	// or single scope
+	if len(scopes) <= 1 {
+		key := ""
+		if len(scopes) == 1 {
+			key = scopes[0].string()
+		}
+		token = s.getCachedToken(key)
 	}
 
 	// request a new token if token is null
@@ -140,9 +141,13 @@ func (s *standardTokenAuthorizer) Modify(req *http.Request) error {
 		if err != nil {
 			return err
 		}
-		// only cache the token for single scope request
-		if len(scopes) == 1 {
-			s.updateCachedToken(scopes[0], token)
+		// only cache the token for no scope(ping) or single scope request
+		if len(scopes) <= 1 {
+			key := ""
+			if len(scopes) == 1 {
+				key = scopes[0].string()
+			}
+			s.updateCachedToken(key, token)
 		}
 	}
 
@@ -166,10 +171,10 @@ func (s *standardTokenAuthorizer) filterReq(req *http.Request) (bool, error) {
 	return true, nil
 }
 
-func (s *standardTokenAuthorizer) getCachedToken(scope *Scope) *models.Token {
+func (s *standardTokenAuthorizer) getCachedToken(scope string) *models.Token {
 	s.RLock()
 	defer s.RUnlock()
-	token := s.cachedTokens[scope.string()]
+	token := s.cachedTokens[scope]
 	if token == nil {
 		return nil
 	}
@@ -188,10 +193,10 @@ func (s *standardTokenAuthorizer) getCachedToken(scope *Scope) *models.Token {
 	return token
 }
 
-func (s *standardTokenAuthorizer) updateCachedToken(scope *Scope, token *models.Token) {
+func (s *standardTokenAuthorizer) updateCachedToken(scope string, token *models.Token) {
 	s.Lock()
 	defer s.Unlock()
-	s.cachedTokens[scope.string()] = token
+	s.cachedTokens[scope] = token
 }
 
 func (s *standardTokenAuthorizer) requestToken(scopes []*Scope) (*models.Token, error) {
@@ -199,9 +204,42 @@ func (s *standardTokenAuthorizer) requestToken(scopes []*Scope) (*models.Token, 
 	return getToken(s.client, s.credential, realm, s.service, scopes)
 }
 
-// TODO
-func parseScope(req *http.Request) (*Scope, error) {
-	return nil, nil
+// parse scope from the request path and method
+func parseScope(req *http.Request) *Scope {
+	path := strings.TrimRight(req.URL.Path, "/")
+
+	scope := &Scope{}
+	repository := parseRepository(path)
+	if len(repository) > 0 {
+		scope.Type = "repository"
+		scope.Name = repository
+		switch req.Method {
+		case http.MethodGet:
+			scope.Actions = []string{"pull"}
+		case http.MethodPost, http.MethodPut, http.MethodPatch:
+			scope.Actions = []string{"push"}
+		case http.MethodDelete:
+			scope.Actions = []string{"*"}
+		default:
+			log.Warningf("unsupported method: %s", req.Method)
+			return nil
+		}
+		return scope
+	}
+
+	if base.MatchString(path) {
+		return nil
+	}
+
+	if catalog.MatchString(path) {
+		scope.Type = "registry"
+		scope.Name = "catalog"
+		scope.Actions = []string{"*"}
+		return scope
+	}
+
+	log.Warningf("can not parse scope from the request: %s %s", req.Method, req.URL.Path)
+	return nil
 }
 
 func (s *standardTokenAuthorizer) ping(endpoint string) error {
