@@ -22,17 +22,6 @@ import (
 	"github.com/vmware/harbor/src/common/utils/log"
 )
 
-/*
-	get, "/v2/",
-	get "/v2/{name:" + reference.NameRegexp.String() + "}/tags/list",
-	get, put, delete "/v2/{name:" + reference.NameRegexp.String() + "}/manifests/{reference:" + reference.TagRegexp.String() + "|" + digest.DigestRegexp.String() + "}",
-	get, delete "/v2/{name:" + reference.NameRegexp.String() + "}/blobs/{digest:" + digest.DigestRegexp.String() + "}",
-	post "/v2/{name:" + reference.NameRegexp.String() + "}/blobs/uploads/",
-	get, patch, put, delete"/v2/{name:" + reference.NameRegexp.String() + "}/blobs/uploads/{uuid:[a-zA-Z0-9-_.=]+}",
-	get "/v2/_catalog",
-
-*/
-
 var (
 	base            = regexp.MustCompile("/v2")
 	catalog         = regexp.MustCompile("/v2/_catalog")

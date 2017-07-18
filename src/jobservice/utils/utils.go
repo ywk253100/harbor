@@ -25,11 +25,9 @@ import (
 )
 
 //NewRepositoryClient create a repository client with scope type "reopsitory" and scope as the repository it would access.
-// TODO remove scope
 func NewRepositoryClient(endpoint string, insecure bool, credential auth.Credential,
-	tokenServiceEndpoint, repository string, actions ...string) (*registry.Repository, error) {
-	authorizer := auth.NewStandardTokenAuthorizer(credential, insecure,
-		tokenServiceEndpoint)
+	tokenServiceEndpoint, repository string) (*registry.Repository, error) {
+	authorizer := auth.NewStandardTokenAuthorizer(credential, insecure, tokenServiceEndpoint)
 	uam := &userAgentModifier{
 		userAgent: "harbor-registry-client",
 	}

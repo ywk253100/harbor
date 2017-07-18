@@ -64,8 +64,7 @@ func (t *TargetAPI) ping(endpoint, username, password string) {
 		log.Errorf("failed to check whether insecure or not: %v", err)
 		t.CustomAbort(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 	}
-	registry, err := newRegistryClient(endpoint, !verify, username, password,
-		"", "", "")
+	registry, err := newRegistryClient(endpoint, !verify, username, password)
 	if err != nil {
 		// timeout, dns resolve error, connection refused, etc.
 		if urlErr, ok := err.(*url.Error); ok {
@@ -345,17 +344,10 @@ func (t *TargetAPI) Delete() {
 	}
 }
 
-// TODO remove scope
-func newRegistryClient(endpoint string, insecure bool, username, password, scopeType, scopeName string,
-	scopeActions ...string) (*registry.Registry, error) {
+func newRegistryClient(endpoint string, insecure bool, username, password string) (*registry.Registry, error) {
 	credential := auth.NewBasicAuthCredential(username, password)
-
 	authorizer := auth.NewStandardTokenAuthorizer(credential, insecure)
-	client, err := registry.NewRegistryWithModifiers(endpoint, insecure, authorizer)
-	if err != nil {
-		return nil, err
-	}
-	return client, nil
+	return registry.NewRegistryWithModifiers(endpoint, insecure, authorizer)
 }
 
 // ListPolicies ...

@@ -16,12 +16,15 @@
 package utils
 
 import (
+	"strings"
+
 	"github.com/vmware/harbor/src/common/dao"
 	"github.com/vmware/harbor/src/common/models"
 	"github.com/vmware/harbor/src/common/utils/log"
 	"github.com/vmware/harbor/src/common/utils/registry"
 	"github.com/vmware/harbor/src/common/utils/registry/auth"
 	"github.com/vmware/harbor/src/ui/config"
+	"github.com/vmware/harbor/src/ui/service/token"
 
 	"bytes"
 	"encoding/json"
@@ -124,9 +127,9 @@ func NewRepositoryClientForUI(username, repository string, actions ...string) (*
 	if err != nil {
 		return nil, err
 	}
-	// TODO
-	token := ""
-	authorizer := auth.NewRawTokenAuthorizer(token)
+	token, err := token.RegistryTokenForUI(username, "harbor-registry",
+		[]string{fmt.Sprintf("repository:%s:%s", repository, strings.Join(actions, ","))})
+	authorizer := auth.NewRawTokenAuthorizer(token.Token)
 	return registry.NewRepositoryWithModifiers(repository, url,
 		true, authorizer)
 }
