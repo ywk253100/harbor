@@ -89,6 +89,9 @@ script:
   - docker ps 
   - sudo cat /var/log/harbor/2017-09-04/clair.log
   - sudo cat /var/log/harbor/2017-09-04/clair-db.log
+  - sleep 30
+  - docker ps 
+  - sudo cat /var/log/harbor/2017-09-04/clair.log
   - ./tests/validatecontainers.sh
   - ./tests/notarytest.sh
   - ./tests/swaggerchecker.sh
