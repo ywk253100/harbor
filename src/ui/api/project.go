@@ -121,13 +121,9 @@ func (p *ProjectAPI) Post() {
 	}
 
 	projectID, err := p.ProjectMgr.Create(&models.Project{
-		Name:                                       pro.Name,
-		Public:                                     pro.Public,
-		OwnerName:                                  p.SecurityCtx.GetUsername(),
-		EnableContentTrust:                         pro.EnableContentTrust,
-		PreventVulnerableImagesFromRunning:         pro.PreventVulnerableImagesFromRunning,
-		PreventVulnerableImagesFromRunningSeverity: pro.PreventVulnerableImagesFromRunningSeverity,
-		AutomaticallyScanImagesOnPush:              pro.AutomaticallyScanImagesOnPush,
+		Name:      pro.Name,
+		OwnerName: p.SecurityCtx.GetUsername(),
+		Metadata:  pro.Metadata,
 	})
 	if err != nil {
 		if err == errutil.ErrDupProject {
@@ -178,7 +174,7 @@ func (p *ProjectAPI) Head() {
 
 // Get ...
 func (p *ProjectAPI) Get() {
-	if p.project.Public == 0 {
+	if !p.project.IsPublic() {
 		if !p.SecurityCtx.IsAuthenticated() {
 			p.HandleUnauthorized()
 			return
@@ -325,19 +321,13 @@ func (p *ProjectAPI) List() {
 		}
 	}
 
-	total, err := p.ProjectMgr.GetTotal(query, base)
+	result, err := p.ProjectMgr.List(query, base)
 	if err != nil {
-		p.ParseAndHandleError("failed to get total of projects", err)
+		p.ParseAndHandleError("failed to list projects", err)
 		return
 	}
 
-	projects, err := p.ProjectMgr.GetAll(query, base)
-	if err != nil {
-		p.ParseAndHandleError("failed to get projects", err)
-		return
-	}
-
-	for _, project := range projects {
+	for _, project := range result.Projects {
 		if p.SecurityCtx.IsAuthenticated() {
 			roles := p.SecurityCtx.GetProjectRoles(project.ProjectID)
 			if len(roles) != 0 {
@@ -359,11 +349,13 @@ func (p *ProjectAPI) List() {
 		project.RepoCount = len(repos)
 	}
 
-	p.SetPaginationHeader(total, page, size)
-	p.Data["json"] = projects
+	p.SetPaginationHeader(result.Total, page, size)
+	p.Data["json"] = result.Projects
 	p.ServeJSON()
 }
 
+// TODO
+/*
 // ToggleProjectPublic ...
 func (p *ProjectAPI) ToggleProjectPublic() {
 	if !p.SecurityCtx.IsAuthenticated() {
@@ -392,7 +384,7 @@ func (p *ProjectAPI) ToggleProjectPublic() {
 		return
 	}
 }
-
+*/
 // Logs ...
 func (p *ProjectAPI) Logs() {
 	if !p.SecurityCtx.IsAuthenticated() {

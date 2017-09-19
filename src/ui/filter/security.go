@@ -32,8 +32,8 @@ import (
 	"github.com/vmware/harbor/src/common/utils/log"
 	"github.com/vmware/harbor/src/ui/auth"
 	"github.com/vmware/harbor/src/ui/config"
-	"github.com/vmware/harbor/src/ui/projectmanager"
-	"github.com/vmware/harbor/src/ui/projectmanager/pms"
+	"github.com/vmware/harbor/src/ui/promgr"
+	//"github.com/vmware/harbor/src/ui/promgr/pmsdriver"
 )
 
 type key string
@@ -250,29 +250,31 @@ func (s *sessionReqCtxModifier) Modify(ctx *beegoctx.Context) bool {
 type tokenReqCtxModifier struct{}
 
 func (t *tokenReqCtxModifier) Modify(ctx *beegoctx.Context) bool {
-	token := ctx.Request.Header.Get(authcontext.AuthTokenHeader)
-	if len(token) == 0 {
-		return false
-	}
+	// TODO
+	/*
+		token := ctx.Request.Header.Get(authcontext.AuthTokenHeader)
+		if len(token) == 0 {
+			return false
+		}
 
-	log.Debug("got token from request")
+		log.Debug("got token from request")
 
-	authContext, err := authcontext.GetAuthCtx(config.AdmiralClient,
-		config.AdmiralEndpoint(), token)
-	if err != nil {
-		log.Errorf("failed to get auth context: %v", err)
-		return false
-	}
+		authContext, err := authcontext.GetAuthCtx(config.AdmiralClient,
+			config.AdmiralEndpoint(), token)
+		if err != nil {
+			log.Errorf("failed to get auth context: %v", err)
+			return false
+		}
 
-	log.Debug("creating PMS project manager...")
-	pm := pms.NewProjectManager(config.AdmiralClient,
-		config.AdmiralEndpoint(), &pms.RawTokenReader{
-			Token: token,
-		})
-	log.Debug("creating admiral security context...")
-	securCtx := admiral.NewSecurityContext(authContext, pm)
-	setSecurCtxAndPM(ctx.Request, securCtx, pm)
-
+		log.Debug("creating PMS project manager...")
+		pm := pms.NewProjectManager(config.AdmiralClient,
+			config.AdmiralEndpoint(), &pms.RawTokenReader{
+				Token: token,
+			})
+		log.Debug("creating admiral security context...")
+		securCtx := admiral.NewSecurityContext(authContext, pm)
+		setSecurCtxAndPM(ctx.Request, securCtx, pm)
+	*/
 	return true
 }
 
@@ -283,14 +285,17 @@ func (u *unauthorizedReqCtxModifier) Modify(ctx *beegoctx.Context) bool {
 	log.Debug("user information is nil")
 
 	var securCtx security.Context
-	var pm projectmanager.ProjectManager
+	var pm promgr.ProjectManager
 	if config.WithAdmiral() {
-		// integration with admiral
-		log.Debug("creating PMS project manager...")
-		pm = pms.NewProjectManager(config.AdmiralClient,
-			config.AdmiralEndpoint(), nil)
-		log.Debug("creating admiral security context...")
-		securCtx = admiral.NewSecurityContext(nil, pm)
+		// TODO
+		/*
+			// integration with admiral
+			log.Debug("creating PMS project manager...")
+			pm = pms.NewProjectManager(config.AdmiralClient,
+				config.AdmiralEndpoint(), nil)
+			log.Debug("creating admiral security context...")
+			securCtx = admiral.NewSecurityContext(nil, pm)
+		*/
 	} else {
 		// standalone
 		log.Debug("using local database project manager")
@@ -302,7 +307,7 @@ func (u *unauthorizedReqCtxModifier) Modify(ctx *beegoctx.Context) bool {
 	return true
 }
 
-func setSecurCtxAndPM(req *http.Request, ctx security.Context, pm projectmanager.ProjectManager) {
+func setSecurCtxAndPM(req *http.Request, ctx security.Context, pm promgr.ProjectManager) {
 	addToReqContext(req, securCtxKey, ctx)
 	addToReqContext(req, pmKey, pm)
 }
@@ -331,7 +336,7 @@ func GetSecurityContext(req *http.Request) (security.Context, error) {
 }
 
 // GetProjectManager tries to get project manager from request and returns it
-func GetProjectManager(req *http.Request) (projectmanager.ProjectManager, error) {
+func GetProjectManager(req *http.Request) (promgr.ProjectManager, error) {
 	if req == nil {
 		return nil, fmt.Errorf("request is nil")
 	}
@@ -341,7 +346,7 @@ func GetProjectManager(req *http.Request) (projectmanager.ProjectManager, error)
 		return nil, fmt.Errorf("the project manager got from request is nil")
 	}
 
-	p, ok := pm.(projectmanager.ProjectManager)
+	p, ok := pm.(promgr.ProjectManager)
 	if !ok {
 		return nil, fmt.Errorf("the variable got from request is not project manager type")
 	}

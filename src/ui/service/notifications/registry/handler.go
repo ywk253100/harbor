@@ -171,7 +171,7 @@ func autoScanEnabled(project *models.Project) bool {
 		return false
 	}
 	if config.WithAdmiral() {
-		return project.AutomaticallyScanImagesOnPush
+		return project.AutoScan()
 	}
 	return os.Getenv("ENABLE_HARBOR_SCAN_ON_PUSH") == "1"
 }

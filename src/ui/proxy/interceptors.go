@@ -9,7 +9,7 @@ import (
 	"github.com/vmware/harbor/src/common/utils/log"
 	"github.com/vmware/harbor/src/common/utils/notary"
 	"github.com/vmware/harbor/src/ui/config"
-	"github.com/vmware/harbor/src/ui/projectmanager"
+	"github.com/vmware/harbor/src/ui/promgr"
 	uiutils "github.com/vmware/harbor/src/ui/utils"
 
 	"context"
@@ -88,7 +88,7 @@ func (ec envPolicyChecker) vulnerablePolicy(name string) (bool, models.Severity)
 }
 
 type pmsPolicyChecker struct {
-	pm projectmanager.ProjectManager
+	pm promgr.ProjectManager
 }
 
 func (pc pmsPolicyChecker) contentTrustEnabled(name string) bool {
@@ -97,7 +97,7 @@ func (pc pmsPolicyChecker) contentTrustEnabled(name string) bool {
 		log.Errorf("Unexpected error when getting the project, error: %v", err)
 		return true
 	}
-	return project.EnableContentTrust
+	return project.ContentTrustEnabled()
 }
 func (pc pmsPolicyChecker) vulnerablePolicy(name string) (bool, models.Severity) {
 	project, err := pc.pm.Get(name)
@@ -105,11 +105,11 @@ func (pc pmsPolicyChecker) vulnerablePolicy(name string) (bool, models.Severity)
 		log.Errorf("Unexpected error when getting the project, error: %v", err)
 		return true, models.SevUnknown
 	}
-	return project.PreventVulnerableImagesFromRunning, clair.ParseClairSev(project.PreventVulnerableImagesFromRunningSeverity)
+	return project.PreventVul(), clair.ParseClairSev(project.Severity())
 }
 
 // newPMSPolicyChecker returns an instance of an pmsPolicyChecker
-func newPMSPolicyChecker(pm projectmanager.ProjectManager) policyChecker {
+func newPMSPolicyChecker(pm promgr.ProjectManager) policyChecker {
 	return &pmsPolicyChecker{
 		pm: pm,
 	}

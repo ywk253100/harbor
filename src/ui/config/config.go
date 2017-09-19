@@ -15,7 +15,7 @@
 package config
 
 import (
-	"crypto/tls"
+	//"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -29,9 +29,10 @@ import (
 	"github.com/vmware/harbor/src/common/models"
 	"github.com/vmware/harbor/src/common/secret"
 	"github.com/vmware/harbor/src/common/utils/log"
-	"github.com/vmware/harbor/src/ui/projectmanager"
-	"github.com/vmware/harbor/src/ui/projectmanager/db"
-	"github.com/vmware/harbor/src/ui/projectmanager/pms"
+	"github.com/vmware/harbor/src/ui/promgr"
+	"github.com/vmware/harbor/src/ui/promgr/pmsdriver"
+	"github.com/vmware/harbor/src/ui/promgr/pmsdriver/admiral"
+	"github.com/vmware/harbor/src/ui/promgr/pmsdriver/local"
 )
 
 const (
@@ -46,7 +47,8 @@ var (
 	// AdminserverClient is a client for adminserver
 	AdminserverClient client.Client
 	// GlobalProjectMgr is initialized based on the deploy mode
-	GlobalProjectMgr projectmanager.ProjectManager
+	// TODO rename
+	GlobalProjectMgr promgr.ProjectManager
 	mg               *comcfg.Manager
 	keyProvider      comcfg.KeyProvider
 	// AdmiralClient is initialized only under integration deploy mode
@@ -105,34 +107,40 @@ func initSecretStore() {
 }
 
 func initProjectManager() {
+	var driver pmsdriver.PMSDriver
+
+	// standalone
 	if !WithAdmiral() {
-		// standalone
-		log.Info("initializing the project manager based on database...")
-		GlobalProjectMgr = &db.ProjectManager{}
-		return
+		log.Info("initializing the project manager based on local database...")
+		driver = local.NewDriver()
 	}
 
-	// integration with admiral
-	log.Info("initializing the project manager based on PMS...")
-	// TODO read ca/cert file and pass it to the TLS config
-	AdmiralClient = &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
+	// TODO
+	/*
+		// integration with admiral
+		log.Info("initializing the project manager based on PMS...")
+		// TODO read ca/cert file and pass it to the TLS config
+		AdmiralClient = &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					InsecureSkipVerify: true,
+				},
 			},
-		},
-	}
+		}
 
-	path := os.Getenv("SERVICE_TOKEN_FILE_PATH")
-	if len(path) == 0 {
-		path = defaultTokenFilePath
-	}
-	log.Infof("service token file path: %s", path)
-	TokenReader = &pms.FileTokenReader{
-		Path: path,
-	}
-	GlobalProjectMgr = pms.NewProjectManager(AdmiralClient,
-		AdmiralEndpoint(), TokenReader)
+		path := os.Getenv("SERVICE_TOKEN_FILE_PATH")
+		if len(path) == 0 {
+			path = defaultTokenFilePath
+		}
+		log.Infof("service token file path: %s", path)
+		TokenReader = &pms.FileTokenReader{
+			Path: path,
+		}
+		GlobalProjectMgr = pms.NewProjectManager(AdmiralClient,
+			AdmiralEndpoint(), TokenReader)
+	*/
+
+	GlobalProjectMgr = promgr.NewDefaultProMgr(driver)
 }
 
 // Load configurations

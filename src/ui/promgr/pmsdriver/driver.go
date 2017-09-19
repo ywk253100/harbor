@@ -12,25 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package projectmanager
+package pmsdriver
 
 import (
 	"github.com/vmware/harbor/src/common/models"
 )
 
-// ProjectManager is the project mamager which abstracts the operations related
-// to projects
-type ProjectManager interface {
+// PMSDriver defines the operations that a project manage service driver
+// should implement
+type PMSDriver interface {
 	Get(projectIDOrName interface{}) (*models.Project, error)
-	IsPublic(projectIDOrName interface{}) (bool, error)
-	Exist(projectIDOrName interface{}) (bool, error)
-	// get all public project
-	GetPublic() ([]*models.Project, error)
 	Create(*models.Project) (int64, error)
 	Delete(projectIDOrName interface{}) error
-	Update(projectIDOrName interface{}, project *models.Project) error
-	// GetAll returns a project list according to the query parameters
-	GetAll(query *models.ProjectQueryParam, base ...*models.BaseProjectCollection) ([]*models.Project, error)
-	// GetTotal returns the total count according to the query parameters
-	GetTotal(query *models.ProjectQueryParam, base ...*models.BaseProjectCollection) (int64, error)
+	Update(projectIDOrName interface{}, metadata map[string]string) error
+	// TODO remove base
+	List(query *models.ProjectQueryParam,
+		base ...*models.BaseProjectCollection) (*models.ProjectQueryResult, error)
+	EnableMetaMgr() bool
 }

@@ -15,30 +15,80 @@
 package models
 
 import (
+	"strings"
 	"time"
 )
 
 // Project holds the details of a project.
 // TODO remove useless attrs
 type Project struct {
-	ProjectID       int64     `orm:"pk;auto;column(project_id)" json:"project_id"`
-	OwnerID         int       `orm:"column(owner_id)" json:"owner_id"`
-	Name            string    `orm:"column(name)" json:"name"`
-	CreationTime    time.Time `orm:"column(creation_time)" json:"creation_time"`
-	CreationTimeStr string    `orm:"-" json:"creation_time_str"`
-	Deleted         int       `orm:"column(deleted)" json:"deleted"`
-	//UserID          int `json:"UserId"`
-	OwnerName string `orm:"-" json:"owner_name"`
-	Public    int    `orm:"column(public)" json:"public"`
+	ProjectID    int64     `orm:"pk;auto;column(project_id)" json:"project_id"`
+	Name         string    `orm:"column(name)" json:"name"`
+	OwnerID      int       `orm:"column(owner_id)" json:"owner_id"`
+	CreationTime time.Time `orm:"column(creation_time)" json:"creation_time"`
+	UpdateTime   time.Time `orm:"update_time" json:"update_time"`
+	Deleted      int       `orm:"column(deleted)" json:"deleted"`
+	// TODO remove?
+	CreationTimeStr string `orm:"-" json:"creation_time_str"`
+	OwnerName       string `orm:"-" json:"owner_name"`
 	//This field does not have correspondent column in DB, this is just for UI to disable button
-	Togglable                                  bool      `orm:"-"`
-	UpdateTime                                 time.Time `orm:"update_time" json:"update_time"`
-	Role                                       int       `orm:"-" json:"current_user_role_id"`
-	RepoCount                                  int       `orm:"-" json:"repo_count"`
-	EnableContentTrust                         bool      `orm:"-" json:"enable_content_trust"`
-	PreventVulnerableImagesFromRunning         bool      `orm:"-" json:"prevent_vulnerable_images_from_running"`
-	PreventVulnerableImagesFromRunningSeverity string    `orm:"-" json:"prevent_vulnerable_images_from_running_severity"`
-	AutomaticallyScanImagesOnPush              bool      `orm:"-" json:"automatically_scan_images_on_push"`
+	Togglable bool              `orm:"-"`
+	Role      int               `orm:"-" json:"current_user_role_id"`
+	RepoCount int               `orm:"-" json:"repo_count"`
+	Metadata  map[string]string `orm:"-" json:"metadata"`
+}
+
+func (p *Project) GetMetadata(key string) (string, bool) {
+	if len(p.Metadata) == 0 {
+		return "", false
+	}
+	value, ok := p.Metadata[key]
+	return value, ok
+}
+
+func (p *Project) IsPublic() bool {
+	value, ok := p.GetMetadata(ProMetaPublic)
+	if !ok {
+		return false
+	}
+
+	return strings.ToLower(value) == "true" || value == "1"
+}
+
+func (p *Project) ContentTrustEnabled() bool {
+	value, ok := p.GetMetadata(ProMetaEnableContentTrust)
+	if !ok {
+		return false
+	}
+
+	return strings.ToLower(value) == "true" || value == "1"
+}
+
+func (p *Project) PreventVul() bool {
+	value, ok := p.GetMetadata(ProMetaPreventVul)
+	if !ok {
+		return false
+	}
+
+	return strings.ToLower(value) == "true" || value == "1"
+}
+
+func (p *Project) Severity() string {
+	value, ok := p.GetMetadata(ProMetaSeverity)
+	if !ok {
+		return ""
+	}
+
+	return strings.ToLower(value)
+}
+
+func (p *Project) AutoScan() bool {
+	value, ok := p.GetMetadata(ProMetaAutoScan)
+	if !ok {
+		return false
+	}
+
+	return strings.ToLower(value) == "true" || value == "1"
 }
 
 // ProjectSorter holds an array of projects
@@ -102,10 +152,11 @@ type BaseProjectCollection struct {
 
 // ProjectRequest holds informations that need for creating project API
 type ProjectRequest struct {
-	Name                                       string `json:"project_name"`
-	Public                                     int    `json:"public"`
-	EnableContentTrust                         bool   `json:"enable_content_trust"`
-	PreventVulnerableImagesFromRunning         bool   `json:"prevent_vulnerable_images_from_running"`
-	PreventVulnerableImagesFromRunningSeverity string `json:"prevent_vulnerable_images_from_running_severity"`
-	AutomaticallyScanImagesOnPush              bool   `json:"automatically_scan_images_on_push"`
+	Name     string            `json:"project_name"`
+	Metadata map[string]string `json:"metadata"`
+}
+
+type ProjectQueryResult struct {
+	Total    int64
+	Projects []*Project
 }

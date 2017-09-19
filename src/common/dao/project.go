@@ -19,35 +19,20 @@ import (
 	"github.com/vmware/harbor/src/common/models"
 
 	"fmt"
-	"time"
-
-	//"github.com/vmware/harbor/src/common/utils/log"
 )
 
 //TODO:transaction, return err
 
 // AddProject adds a project to the database along with project roles information and access log records.
 func AddProject(project models.Project) (int64, error) {
-
 	o := GetOrmer()
-	p, err := o.Raw("insert into project (owner_id, name, creation_time, update_time, deleted, public) values (?, ?, ?, ?, ?, ?)").Prepare()
+	id, err := o.Insert(project)
 	if err != nil {
 		return 0, err
 	}
 
-	now := time.Now()
-	r, err := p.Exec(project.OwnerID, project.Name, now, now, project.Deleted, project.Public)
-	if err != nil {
-		return 0, err
-	}
-
-	projectID, err := r.LastInsertId()
-	if err != nil {
-		return 0, err
-	}
-
-	err = AddProjectMember(projectID, project.OwnerID, models.PROJECTADMIN)
-	return projectID, err
+	err = AddProjectMember(id, project.OwnerID, models.PROJECTADMIN)
+	return id, err
 }
 
 /*

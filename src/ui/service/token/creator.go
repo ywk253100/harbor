@@ -26,7 +26,7 @@ import (
 	"github.com/vmware/harbor/src/common/utils/log"
 	"github.com/vmware/harbor/src/ui/config"
 	"github.com/vmware/harbor/src/ui/filter"
-	promgr "github.com/vmware/harbor/src/ui/projectmanager"
+	"github.com/vmware/harbor/src/ui/promgr"
 )
 
 var creatorMap map[string]Creator

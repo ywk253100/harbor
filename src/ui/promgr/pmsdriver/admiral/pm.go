@@ -14,6 +14,7 @@
 
 package pms
 
+/*
 import (
 	"bytes"
 	"encoding/json"
@@ -273,7 +274,7 @@ func (p *ProjectManager) Exist(projectIDOrName interface{}) (bool, error) {
 
 	return project != nil, nil
 }
-
+*/
 /*
 // GetRoles gets roles that the user has to the project
 // This method is used in GET /projects API.
@@ -328,7 +329,7 @@ func (p *ProjectManager) GetRoles(username string, projectIDOrName interface{}) 
 	return roles, nil
 }
 */
-
+/*
 func (p *ProjectManager) getIDbyHarborIDOrName(projectIDOrName interface{}) (string, error) {
 	pro, err := p.get(projectIDOrName)
 	if err != nil {
@@ -509,3 +510,4 @@ func (p *ProjectManager) getToken() string {
 	}
 	return token
 }
+*/

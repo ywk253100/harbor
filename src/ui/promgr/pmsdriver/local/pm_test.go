@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package db
+package local
 
 import (
 	"os"
@@ -71,7 +71,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestGet(t *testing.T) {
-	pm := &ProjectManager{}
+	pm := &driver{}
 
 	// project name
 	project, err := pm.Get("library")
@@ -96,7 +96,7 @@ func TestGet(t *testing.T) {
 }
 
 func TestExist(t *testing.T) {
-	pm := &ProjectManager{}
+	pm := &driver{}
 
 	// exist project
 	exist, err := pm.Exist("library")
@@ -110,7 +110,7 @@ func TestExist(t *testing.T) {
 }
 
 func TestIsPublic(t *testing.T) {
-	pms := &ProjectManager{}
+	pms := &driver{}
 	// public project
 	public, err := pms.IsPublic("library")
 	assert.Nil(t, err)
@@ -122,7 +122,7 @@ func TestIsPublic(t *testing.T) {
 }
 
 func TestGetPublic(t *testing.T) {
-	pm := &ProjectManager{}
+	pm := &driver{}
 	projects, err := pm.GetPublic()
 	assert.Nil(t, err)
 	assert.NotEqual(t, 0, len(projects))
@@ -133,7 +133,7 @@ func TestGetPublic(t *testing.T) {
 }
 
 func TestCreateAndDelete(t *testing.T) {
-	pm := &ProjectManager{}
+	pm := &driver{}
 
 	// nil project
 	_, err := pm.Create(nil)
@@ -183,7 +183,7 @@ func TestCreateAndDelete(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
-	pm := &ProjectManager{}
+	pm := &driver{}
 
 	id, err := pm.Create(&models.Project{
 		Name:    "test",
@@ -205,7 +205,7 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestGetTotal(t *testing.T) {
-	pm := &ProjectManager{}
+	pm := &driver{}
 
 	id, err := pm.Create(&models.Project{
 		Name:    "get_total_test",
@@ -239,7 +239,7 @@ func TestGetTotal(t *testing.T) {
 }
 
 func TestGetAll(t *testing.T) {
-	pm := &ProjectManager{}
+	pm := &driver{}
 
 	id, err := pm.Create(&models.Project{
 		Name:    "get_all_test",
