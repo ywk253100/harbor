@@ -98,6 +98,27 @@ Delete Repo
     Click Element  xpath=//clr-modal//div[@class="modal-dialog"]//button[2]
     Sleep  2
 
+Delete Project
+    [Arguments]  ${projname}
+    Sleep  1
+    Click Element  //list-project//clr-dg-row-master[contains(.,'${projname}')]//clr-dg-action-overflow
+    Click Element  //list-project//clr-dg-row-master[contains(.,'${projname}')]//clr-dg-action-overflow//button[contains(.,'Delete')]
+    #click delete button to confirm
+    Sleep  1
+    Click Element  //confiramtion-dialog//button[contains(.,'DELETE')]
+
+Project Should Not Be Deleted
+    [Arguments]  ${projname}
+    Delete Project  ${projname}
+    Sleep  1
+    Page Should Contain Element  //clr-alert//span[contains(.,'cannot')]
+
+Project Should Be Deleted
+    [Arguments]  ${projname}
+    Delete Project  ${projname}
+    Sleep  2
+    Page Should Not Contain  ${projname}
+
 Advanced Search Should Display
     Page Should Contain Element  xpath=//audit-log//div[@class="flex-xs-middle"]/button
 
@@ -153,11 +174,11 @@ Expand Repo
     sleep  1
 
 Scan Repo
-    [Arguments]  ${projectname}
-    Click Element  //hbr-tag//clr-dg-row-master[contains(.,'${projectname}')]//clr-dg-action-overflow
-    Click Element  //hbr-tag//clr-dg-row-master[contains(.,'${projectname}')]//clr-dg-action-overflow//button[contains(.,'Scan')]
+    [Arguments]  ${tagname}
+    Click Element  //hbr-tag//clr-dg-row-master[contains(.,'${tagname}')]//clr-dg-action-overflow
+    Click Element  //hbr-tag//clr-dg-row-master[contains(.,'${tagname}')]//clr-dg-action-overflow//button[contains(.,'Scan')]
     Sleep  15
 
 Summary Chart Should Display
-    [Arguments]  ${projectname}
-    Page Should Contain Element  //clr-dg-row-master[contains(.,'${projectname}')]//hbr-vulnerability-bar//hbr-vulnerability-summary-chart
+    [Arguments]  ${tagname}
+    Page Should Contain Element  //clr-dg-row-master[contains(.,'${tagname}')]//hbr-vulnerability-bar//hbr-vulnerability-summary-chart

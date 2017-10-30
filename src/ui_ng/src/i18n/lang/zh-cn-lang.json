@@ -86,7 +86,7 @@
         "LOGOUT": "退出"
     },
     "GLOBAL_SEARCH": {
-        "PLACEHOLDER": "搜索 Harbor...",
+        "PLACEHOLDER": "搜索 {{param}}...",
         "PLACEHOLDER_VIC": "搜索 Registry..."
     },
     "SIDE_NAV": {
@@ -161,7 +161,22 @@
         "REPLICATION": "复制",
         "USERS": "成员",
         "LOGS": "日志",
-        "PROJECTS": "项目"
+        "PROJECTS": "项目",
+        "CONFIG": "配置管理"
+    },
+    "PROJECT_CONFIG": {
+        "REGISTRY": "项目仓库",
+        "PUBLIC_TOGGLE": "公开",
+        "PUBLIC_POLICY": "此项目的仓库对所有访客公开。",
+        "SECURITY": "部署安全",
+        "CONTENT_TRUST_TOGGLE": "内容信任",
+        "CONTENT_TRUST_POLCIY": "仅允许部署通过认证的镜像。",
+        "PREVENT_VULNERABLE_TOGGLE": "阻止潜在漏洞镜像",
+        "PREVENT_VULNERABLE_1": "阻止危害级别",
+        "PREVENT_VULNERABLE_2": "以上的镜像运行。",
+        "SCAN": "漏洞扫描",
+        "AUTOSCAN_TOGGLE": "自动扫描镜像",
+        "AUTOSCAN_POLICY": "当镜像上传后，自动进行扫描"
     },
     "MEMBER": {
         "NEW_MEMBER": "新建成员",
@@ -495,7 +510,8 @@
         "CHART": {
             "SCANNING_TIME": "扫描完成时间:",
             "TOOLTIPS_TITLE": "{{totalPackages}}个{{package}}中的{{totalVulnerability}}个含有{{vulnerability}}.",
-            "TOOLTIPS_TITLE_SINGULAR": "{{totalPackages}}个{{package}}中的{{totalVulnerability}}个含有{{vulnerability}}."
+            "TOOLTIPS_TITLE_SINGULAR": "{{totalPackages}}个{{package}}中的{{totalVulnerability}}个含有{{vulnerability}}.",
+            "TOOLTIPS_TITLE_ZERO": "没有发现可识别的漏洞包"
         },
         "SEVERITY": {
             "HIGH": "严重",

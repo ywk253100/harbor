@@ -71,13 +71,12 @@ create table project (
  creation_time timestamp,
  update_time timestamp,
  deleted tinyint (1) DEFAULT 0 NOT NULL,
- public tinyint (1) DEFAULT 0 NOT NULL,
  FOREIGN KEY (owner_id) REFERENCES user(user_id),
  UNIQUE (name)
 );
 
-insert into project (owner_id, name, creation_time, update_time, public) values 
-(1, 'library', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1);
+insert into project (owner_id, name, creation_time, update_time) values 
+(1, 'library', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 create table project_member (
  project_id int NOT NULL,
@@ -93,6 +92,20 @@ create table project_member (
 
 insert into project_member (project_id, user_id, role, creation_time, update_time) values
 (1, 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+create table project_metadata (
+ project_id int NOT NULL,
+ name varchar(255) NOT NULL,
+ value varchar(255),
+ creation_time timestamp,
+ update_time timestamp,
+ deleted tinyint (1) DEFAULT 0 NOT NULL,
+ PRIMARY KEY (project_id, name),
+ FOREIGN KEY (project_id) REFERENCES project(project_id)
+);
+
+insert into project_metadata (project_id, name, value, creation_time, update_time, deleted) values
+(1, 'public', 'true', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0);
 
 create table access_log (
  log_id INTEGER PRIMARY KEY,
