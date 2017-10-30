@@ -223,8 +223,8 @@ Test Case - Scan A Tag
     Push Image  ${ip}  tester${d}  Test1@34  project${d}  hello-world
     Go Into Project  project${d}
     Expand Repo  project${d}
-    Scan Repo  project${d}
-    Summary Chart Should Display  project${d}
+    Scan Repo  latest
+    Summary Chart Should Display  latest
     Close Browser
 
 Test Case-Manage Project Member
@@ -274,6 +274,23 @@ Test Case - Ldap Sign in and out
     Init LDAP
     Logout Harbor
     Sign In Harbor  ${HARBOR_URL}  user001  user001
+    Close Browser
+
+Test Case - Ldap User Create Project
+    Init Chrome Driver
+    ${d}=    Get Current Date    result_format=%m%s
+    Sign In Harbor  ${HARBOR_URL}  user001  user001
+    Create An New Project  project${d}
+    Close Browser
+
+Test Case - Ldap User Push An Image
+    Init Chrome Driver
+    ${d}=    Get Current Date    result_format=%m%s
+    Sign In Harbor  ${HARBOR_URL}  user001  user001
+    Create An New Project  project${d}
+    Push Image  ${ip}  user001  user001  project${d}  hello-world:latest
+    Go Into Project  project${d}
+    Wait Until Page Contains  project${d}/hello-world
     Close Browser
 
 Test Case - Admin Push Signed Image

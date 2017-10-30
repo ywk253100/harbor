@@ -50,6 +50,7 @@ import {
 import { TranslateService } from '@ngx-translate/core';
 
 import { State, Comparator } from 'clarity-angular';
+import {CopyInputComponent} from "../push-image/copy-input.component";
 
 @Component({
   selector: 'hbr-tag',
@@ -91,6 +92,8 @@ export class TagComponent implements OnInit {
   confirmationDialog: ConfirmationDialogComponent;
 
   @ViewChild('digestTarget') textInput: ElementRef;
+  @ViewChild('copyInput') copyInput: CopyInputComponent;
+
 
   constructor(
     private errorHandler: ErrorHandler,
@@ -262,6 +265,13 @@ export class TagComponent implements OnInit {
     return VULNERABILITY_SCAN_STATUS.unknown;
   }
 
+  existObservablePackage(t: Tag): boolean {
+    return t.scan_overview &&
+      t.scan_overview.components &&
+      t.scan_overview.components.total &&
+      t.scan_overview.components.total > 0 ? true : false;
+  }
+
   //Whether show the 'scan now' menu
   canScanNow(t: Tag): boolean {
     if (!this.withClair) { return false; }
@@ -277,5 +287,10 @@ export class TagComponent implements OnInit {
     if (tagId) {
       this.channel.publishScanEvent(this.repoName + "/" + tagId);
     }
+  }
+
+  //pull command
+  onCpError($event: any): void {
+      this.copyInput.setPullCommendShow();
   }
 }

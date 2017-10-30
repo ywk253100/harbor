@@ -265,10 +265,13 @@ func (t *tokenReqCtxModifier) Modify(ctx *beegoctx.Context) bool {
 	}
 
 	log.Debug("creating PMS project manager...")
-	pm := admiral.NewProjectManager(config.AdmiralClient,
+	driver := admiral.NewDriver(config.AdmiralClient,
 		config.AdmiralEndpoint(), &admiral.RawTokenReader{
 			Token: token,
 		})
+
+	pm := promgr.NewDefaultProjectManager(driver, false)
+
 	log.Debug("creating admiral security context...")
 	securCtx := admr.NewSecurityContext(authContext, pm)
 	setSecurCtxAndPM(ctx.Request, securCtx, pm)
@@ -283,12 +286,13 @@ func (u *unauthorizedReqCtxModifier) Modify(ctx *beegoctx.Context) bool {
 	log.Debug("user information is nil")
 
 	var securCtx security.Context
-	var pm promgr.ProMgr
+	var pm promgr.ProjectManager
 	if config.WithAdmiral() {
 		// integration with admiral
 		log.Debug("creating PMS project manager...")
-		pm = admiral.NewProjectManager(config.AdmiralClient,
+		driver := admiral.NewDriver(config.AdmiralClient,
 			config.AdmiralEndpoint(), nil)
+		pm = promgr.NewDefaultProjectManager(driver, false)
 		log.Debug("creating admiral security context...")
 		securCtx = admr.NewSecurityContext(nil, pm)
 	} else {
@@ -302,7 +306,7 @@ func (u *unauthorizedReqCtxModifier) Modify(ctx *beegoctx.Context) bool {
 	return true
 }
 
-func setSecurCtxAndPM(req *http.Request, ctx security.Context, pm promgr.ProMgr) {
+func setSecurCtxAndPM(req *http.Request, ctx security.Context, pm promgr.ProjectManager) {
 	addToReqContext(req, securCtxKey, ctx)
 	addToReqContext(req, pmKey, pm)
 }
@@ -331,7 +335,7 @@ func GetSecurityContext(req *http.Request) (security.Context, error) {
 }
 
 // GetProjectManager tries to get project manager from request and returns it
-func GetProjectManager(req *http.Request) (promgr.ProMgr, error) {
+func GetProjectManager(req *http.Request) (promgr.ProjectManager, error) {
 	if req == nil {
 		return nil, fmt.Errorf("request is nil")
 	}
@@ -341,7 +345,7 @@ func GetProjectManager(req *http.Request) (promgr.ProMgr, error) {
 		return nil, fmt.Errorf("the project manager got from request is nil")
 	}
 
-	p, ok := pm.(promgr.ProMgr)
+	p, ok := pm.(promgr.ProjectManager)
 	if !ok {
 		return nil, fmt.Errorf("the variable got from request is not project manager type")
 	}
