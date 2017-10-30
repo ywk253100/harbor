@@ -52,4 +52,7 @@ Changelog for harbor database schema
 
 ## 1.3.0
 
+  - create table `project_metadata`
+  - insert data into table `project_metadata`
+  - delete column `public` from table `project`
   - add column `insecure` to table `replication_target`
