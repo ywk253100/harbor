@@ -176,23 +176,6 @@ Test Case - Edit Self-Registration
     Enable Self Reg
     Close Browser
 
-Test Case - Edit Verify Remote Cert
-    Init Chrome Driver
-    Sign In Harbor  ${HARBOR_URL}  %{HARBOR_ADMIN}  %{HARBOR_PASSWORD}
-
-    Switch To System Replication
-    Check Verify Remote Cert
-
-    Logout Harbor
-    Sign In Harbor  ${HARBOR_URL}  %{HARBOR_ADMIN}  %{HARBOR_PASSWORD}
-
-    Switch To System Replication
-    Should Verify Remote Cert Be Enabled
-
-    #restore setting
-    Check Verify Remote Cert
-    Close Browser
-
 Test Case - Edit Email Settings
     Init Chrome Driver
     Sign In Harbor  ${HARBOR_URL}  %{HARBOR_ADMIN}  %{HARBOR_PASSWORD}
@@ -240,8 +223,8 @@ Test Case - Scan A Tag
     Push Image  ${ip}  tester${d}  Test1@34  project${d}  hello-world
     Go Into Project  project${d}
     Expand Repo  project${d}
-    Scan Repo  project${d}
-    Summary Chart Should Display  project${d}
+    Scan Repo  latest
+    Summary Chart Should Display  latest
     Close Browser
 
 Test Case-Manage Project Member
@@ -270,6 +253,18 @@ Test Case-Manage Project Member
 
     Close Browser
 
+Test Case - Delete A Project
+    Init Chrome Driver
+    ${d}=    Get Current Date    result_format=%m%s
+    Create An New Project With New User  ${HARBOR_URL}  tester${d}  tester${d}@vmware.com  tester${d}  Test1@34  harobr  project${d}  false
+    Push Image  ${ip}  tester${d}  Test1@34  project${d}  hello-world  
+    Project Should Not Be Deleted  project${d}
+    Go Into Project  project${d}
+    Delete Repo  project${d}
+    Back To projects
+    Project Should Be Deleted  project${d}
+    Close Browser
+
 Test Case - Assign Sys Admin
     Init Chrome Driver
     ${d}=    Get Current Date    result_format=%m%s
@@ -291,6 +286,23 @@ Test Case - Ldap Sign in and out
     Init LDAP
     Logout Harbor
     Sign In Harbor  ${HARBOR_URL}  user001  user001
+    Close Browser
+
+Test Case - Ldap User Create Project
+    Init Chrome Driver
+    ${d}=    Get Current Date    result_format=%m%s
+    Sign In Harbor  ${HARBOR_URL}  user001  user001
+    Create An New Project  project${d}
+    Close Browser
+
+Test Case - Ldap User Push An Image
+    Init Chrome Driver
+    ${d}=    Get Current Date    result_format=%m%s
+    Sign In Harbor  ${HARBOR_URL}  user001  user001
+    Create An New Project  project${d}
+    Push Image  ${ip}  user001  user001  project${d}  hello-world:latest
+    Go Into Project  project${d}
+    Wait Until Page Contains  project${d}/hello-world
     Close Browser
 
 Test Case - Admin Push Signed Image
