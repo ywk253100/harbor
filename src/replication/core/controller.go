@@ -116,6 +116,9 @@ func (ctl *Controller) GetPolicies(query models.QueryParameter) []models.Replica
 
 //Replicate starts one replication defined in the specified policy;
 //Can be launched by the API layer and related triggers.
-func (ctl *Controller) Replicate(policyID int) error {
+func (ctl *Controller) Replicate(policyID int, resource ...*models.FilterItem) error {
+
+	fmt.Println("replicating %d", policyID)
+
 	return nil
 }
