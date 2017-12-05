@@ -15,19 +15,18 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 
 	"github.com/vmware/harbor/src/common/dao"
 	"github.com/vmware/harbor/src/common/models"
-	u "github.com/vmware/harbor/src/common/utils"
 	"github.com/vmware/harbor/src/common/utils/log"
-	"github.com/vmware/harbor/src/jobservice/config"
 	"github.com/vmware/harbor/src/jobservice/job"
 )
+
+// TODO Refactor jobservice to support replicating both push and deletion operation
+// for the same repository in one job
 
 // ReplicationJob handles /api/replicationJobs /api/replicationJobs/:id/log
 // /api/replicationJobs/actions
@@ -52,48 +51,19 @@ func (rj *ReplicationJob) Prepare() {
 func (rj *ReplicationJob) Post() {
 	var data ReplicationReq
 	rj.DecodeJSONReq(&data)
-	log.Debugf("data: %+v", data)
-	p, err := dao.GetRepPolicy(data.PolicyID)
+
+	operation := data.Operation
+	if len(operation) == 0 {
+		operation = models.RepOpTransfer
+	}
+
+	err := rj.addJob(data.Repo, data.PolicyID, operation, data.TagList...)
 	if err != nil {
-		log.Errorf("Failed to get policy, error: %v", err)
-		rj.RenderError(http.StatusInternalServerError, fmt.Sprintf("Failed to get policy, id: %d", data.PolicyID))
+		log.Errorf("Failed to insert job record, error: %v", err)
+		rj.RenderError(http.StatusInternalServerError, err.Error())
 		return
 	}
-	if p == nil {
-		log.Errorf("Policy not found, id: %d", data.PolicyID)
-		rj.RenderError(http.StatusNotFound, fmt.Sprintf("Policy not found, id: %d", data.PolicyID))
-		return
-	}
-	if len(data.Repo) == 0 { // sync all repositories
-		repoList, err := getRepoList(p.ProjectID)
-		if err != nil {
-			log.Errorf("Failed to get repository list, project id: %d, error: %v", p.ProjectID, err)
-			rj.RenderError(http.StatusInternalServerError, err.Error())
-			return
-		}
-		log.Debugf("repo list: %v", repoList)
-		for _, repo := range repoList {
-			err := rj.addJob(repo, data.PolicyID, models.RepOpTransfer)
-			if err != nil {
-				log.Errorf("Failed to insert job record, error: %v", err)
-				rj.RenderError(http.StatusInternalServerError, err.Error())
-				return
-			}
-		}
-	} else { // sync a single repository
-		var op string
-		if len(data.Operation) > 0 {
-			op = data.Operation
-		} else {
-			op = models.RepOpTransfer
-		}
-		err := rj.addJob(data.Repo, data.PolicyID, op, data.TagList...)
-		if err != nil {
-			log.Errorf("Failed to insert job record, error: %v", err)
-			rj.RenderError(http.StatusInternalServerError, err.Error())
-			return
-		}
-	}
+
 }
 
 func (rj *ReplicationJob) addJob(repo string, policyID int64, operation string, tags ...string) error {
@@ -158,55 +128,4 @@ func (rj *ReplicationJob) GetLog() {
 	repJob := job.NewRepJob(jid)
 	logFile := repJob.LogPath()
 	rj.Ctx.Output.Download(logFile)
-}
-
-// calls the api from UI to get repo list
-func getRepoList(projectID int64) ([]string, error) {
-	repositories := []string{}
-
-	client := &http.Client{}
-	uiURL := config.LocalUIURL()
-	next := "/api/repositories?project_id=" + strconv.Itoa(int(projectID))
-	for len(next) != 0 {
-		req, err := http.NewRequest("GET", uiURL+next, nil)
-		if err != nil {
-			return repositories, err
-		}
-		req.AddCookie(&http.Cookie{Name: models.UISecretCookie, Value: config.JobserviceSecret()})
-		resp, err := client.Do(req)
-		if err != nil {
-			return repositories, err
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != http.StatusOK {
-			b, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				return repositories, err
-			}
-			return repositories,
-				fmt.Errorf("failed to get repo list, response code: %d, error: %s",
-					resp.StatusCode, string(b))
-		}
-
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return repositories, err
-		}
-
-		var list []*struct {
-			Name string `json:"name"`
-		}
-		if err = json.Unmarshal(body, &list); err != nil {
-			return repositories, err
-		}
-		for _, repo := range list {
-			repositories = append(repositories, repo.Name)
-		}
-
-		links := u.ParseLink(resp.Header.Get(http.CanonicalHeaderKey("link")))
-		next = links.Next()
-	}
-
-	return repositories, nil
 }
