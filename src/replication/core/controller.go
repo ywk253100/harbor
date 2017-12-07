@@ -18,10 +18,15 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/vmware/harbor/src/common/http/client"
+	"github.com/vmware/harbor/src/common/http/client/auth"
 	common_models "github.com/vmware/harbor/src/common/models"
 	"github.com/vmware/harbor/src/common/utils/log"
 	"github.com/vmware/harbor/src/jobservice/api"
+<<<<<<< HEAD
 	"github.com/vmware/harbor/src/jobservice/client"
+=======
+>>>>>>> a982d8f... Create replicator to submit replication job to jobservice
 	"github.com/vmware/harbor/src/replication"
 	"github.com/vmware/harbor/src/replication/models"
 	"github.com/vmware/harbor/src/replication/policy"
@@ -82,12 +87,18 @@ func NewDefaultController(cfg ControllerConfig) *DefaultController {
 		triggerManager: trigger.NewManager(cfg.CacheCapacity),
 	}
 
+<<<<<<< HEAD
 	// TODO read from configuration
 	endpoint := "http://jobservice:8080"
 	ctl.replicator = replicator.NewDefaultReplicator(endpoint,
 		&client.Config{
 			Secret: config.UISecret(),
 		})
+=======
+	endpoint := config.InternalJobServiceURL()
+	client := client.NewAuthorizedClient(auth.NewSecretAuthorizer(config.UISecret()))
+	ctl.replicator = replicator.NewDefaultReplicator(endpoint, client)
+>>>>>>> a982d8f... Create replicator to submit replication job to jobservice
 
 	return ctl
 }
@@ -259,6 +270,31 @@ func getCandidates(policy *models.ReplicationPolicy, sourcer *source.Sourcer,
 		}
 	}
 
+<<<<<<< HEAD
+=======
+	// prepare candidates for replication
+	candidates = getCandidates(&policy, ctl.sourcer, candidates...)
+
+	// TODO
+	/*
+		targets := []*common_models.RepTarget{}
+		for _, targetID := range policy.TargetIDs {
+			target, err := ctl.targetManager.GetTarget(targetID)
+			if err != nil {
+				return err
+			}
+			targets = append(targets, target)
+		}
+	*/
+
+	// TODO merge tags whose repository is same into one struct
+
+	// submit the replication
+	return replicate(ctl.replicator, policyID, candidates)
+}
+
+func getCandidates(policy *models.ReplicationPolicy, sourcer *source.Sourcer, candidates ...models.FilterItem) []models.FilterItem {
+>>>>>>> a982d8f... Create replicator to submit replication job to jobservice
 	if len(candidates) == 0 {
 		for _, namespace := range policy.Namespaces {
 			candidates = append(candidates, models.FilterItem{
@@ -293,10 +329,13 @@ func buildFilterChain(policy *models.ReplicationPolicy, sourcer *source.Sourcer)
 }
 
 func replicate(replicator replicator.Replicator, policyID int64, candidates []models.FilterItem) error {
+<<<<<<< HEAD
 	if len(candidates) == 0 {
 		log.Debugf("replicaton candidates are null, no further action needed")
 	}
 
+=======
+>>>>>>> a982d8f... Create replicator to submit replication job to jobservice
 	repositories := map[string][]string{}
 	// TODO the operation of all candidates are same for now. Update it after supporting
 	// replicate deletion

@@ -70,9 +70,17 @@ func checkAndTriggerReplication(image, operation string) error {
 
 	for _, watchItem := range watchItems {
 		item := models.FilterItem{
+<<<<<<< HEAD
 			Kind:      replication.FilterItemKindTag,
 			Value:     image,
 			Operation: operation,
+=======
+			Kind:  replication.FilterItemKindTag,
+			Value: image,
+			Metadata: map[string]interface{}{
+				"operation": operation,
+			},
+>>>>>>> a982d8f... Create replicator to submit replication job to jobservice
 		}
 
 		if err := notifier.Publish(topic.StartReplicationTopic, notification.StartReplicationNotification{

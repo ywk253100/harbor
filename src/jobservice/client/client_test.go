@@ -49,7 +49,11 @@ func TestMain(m *testing.M) {
 }
 
 func TestSubmitReplicationJob(t *testing.T) {
+<<<<<<< HEAD
 	client := NewDefaultClient(url, &Config{})
+=======
+	client := NewDefaultClient(url)
+>>>>>>> a982d8f... Create replicator to submit replication job to jobservice
 	err := client.SubmitReplicationJob(&api.ReplicationReq{})
 	assert.Nil(t, err)
 }

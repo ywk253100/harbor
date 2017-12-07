@@ -18,8 +18,12 @@ import (
 	"strings"
 
 	"github.com/vmware/harbor/src/adminserver/systeminfo/imagestorage"
+<<<<<<< HEAD
 	"github.com/vmware/harbor/src/common/http"
 	"github.com/vmware/harbor/src/common/http/modifier/auth"
+=======
+	httpclient "github.com/vmware/harbor/src/common/http/client"
+>>>>>>> a982d8f... Create replicator to submit replication job to jobservice
 	"github.com/vmware/harbor/src/common/utils"
 )
 
@@ -38,13 +42,23 @@ type Client interface {
 }
 
 // NewClient return an instance of Adminserver client
+<<<<<<< HEAD
 func NewClient(baseURL string, cfg *Config) Client {
+=======
+func NewClient(baseURL string, c httpclient.Client) Client {
+>>>>>>> a982d8f... Create replicator to submit replication job to jobservice
 	baseURL = strings.TrimRight(baseURL, "/")
 	if !strings.Contains(baseURL, "://") {
 		baseURL = "http://" + baseURL
 	}
+<<<<<<< HEAD
 	client := &client{
 		baseURL: baseURL,
+=======
+	return &client{
+		baseURL: baseURL,
+		client:  c,
+>>>>>>> a982d8f... Create replicator to submit replication job to jobservice
 	}
 	if cfg != nil {
 		authorizer := auth.NewSecretAuthorizer(cfg.Secret)
@@ -55,12 +69,27 @@ func NewClient(baseURL string, cfg *Config) Client {
 
 type client struct {
 	baseURL string
+<<<<<<< HEAD
 	client  *http.Client
 }
 
 // Config contains configurations needed for client
 type Config struct {
 	Secret string
+=======
+	client  httpclient.Client
+}
+
+// do creates request and authorizes it if authorizer is not nil
+func (c *client) do(method, relativePath string, body io.Reader) (*http.Response, error) {
+	url := c.baseURL + relativePath
+	req, err := http.NewRequest(method, url, body)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.client.Do(req)
+>>>>>>> a982d8f... Create replicator to submit replication job to jobservice
 }
 
 func (c *client) Ping() error {

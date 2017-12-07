@@ -15,8 +15,18 @@
 package client
 
 import (
+<<<<<<< HEAD
 	"github.com/vmware/harbor/src/common/http"
 	"github.com/vmware/harbor/src/common/http/modifier/auth"
+=======
+	"bytes"
+	"encoding/json"
+	"io/ioutil"
+	"net/http"
+
+	commonhttp "github.com/vmware/harbor/src/common/http"
+	"github.com/vmware/harbor/src/common/http/client"
+>>>>>>> a982d8f... Create replicator to submit replication job to jobservice
 	"github.com/vmware/harbor/src/jobservice/api"
 )
 
@@ -28,6 +38,7 @@ type Client interface {
 // DefaultClient provides a default implement for the interface Client
 type DefaultClient struct {
 	endpoint string
+<<<<<<< HEAD
 	client   *http.Client
 }
 
@@ -38,12 +49,28 @@ type Config struct {
 
 // NewDefaultClient returns an instance of DefaultClient
 func NewDefaultClient(endpoint string, cfg *Config) *DefaultClient {
+=======
+	client   client.Client
+}
+
+// NewDefaultClient returns an instance of DefaultClient
+func NewDefaultClient(endpoint string, client ...client.Client) *DefaultClient {
+>>>>>>> a982d8f... Create replicator to submit replication job to jobservice
 	c := &DefaultClient{
 		endpoint: endpoint,
 	}
 
+<<<<<<< HEAD
 	if cfg != nil {
 		c.client = http.NewClient(nil, auth.NewSecretAuthorizer(cfg.Secret))
+=======
+	if len(client) > 0 {
+		c.client = client[0]
+	}
+
+	if c.client == nil {
+		c.client = &http.Client{}
+>>>>>>> a982d8f... Create replicator to submit replication job to jobservice
 	}
 
 	return c
@@ -52,5 +79,37 @@ func NewDefaultClient(endpoint string, cfg *Config) *DefaultClient {
 // SubmitReplicationJob submits a replication job to the jobservice
 func (d *DefaultClient) SubmitReplicationJob(replication *api.ReplicationReq) error {
 	url := d.endpoint + "/api/jobs/replication"
+<<<<<<< HEAD
 	return d.client.Post(url, replication)
+=======
+
+	buffer := &bytes.Buffer{}
+	if err := json.NewEncoder(buffer).Encode(replication); err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, url, buffer)
+	if err != nil {
+		return err
+	}
+
+	resp, err := d.client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		message, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		return &commonhttp.Error{
+			Code:    resp.StatusCode,
+			Message: string(message),
+		}
+	}
+
+	return nil
+>>>>>>> a982d8f... Create replicator to submit replication job to jobservice
 }

@@ -16,6 +16,7 @@ package client
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"testing"
 
@@ -34,7 +35,11 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
+<<<<<<< HEAD
 	c = NewClient(server.URL, &Config{})
+=======
+	c = NewClient(server.URL, &http.Client{})
+>>>>>>> a982d8f... Create replicator to submit replication job to jobservice
 
 	os.Exit(m.Run())
 }

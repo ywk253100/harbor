@@ -22,4 +22,10 @@ const (
 	TriggerScheduleDaily = "daily"
 	//TriggerScheduleWeekly : type of scheduling is 'weekly'
 	TriggerScheduleWeekly = "weekly"
+<<<<<<< HEAD
+=======
+
+	// PatternMatchAll : the pattern that match all
+	PatternMatchAll = ".*"
+>>>>>>> a982d8f... Create replicator to submit replication job to jobservice
 )
