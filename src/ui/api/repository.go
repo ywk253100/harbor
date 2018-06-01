@@ -336,6 +336,10 @@ func (ra *RepositoryAPI) Delete() {
 	}
 
 	exist, err := repositoryExist(repoName, rc)
+
+	log.Info("reponame : %s", repoName)
+	log.Info("exist : %s", exist)
+
 	if err != nil {
 		log.Errorf("failed to check the existence of repository %s: %v", repoName, err)
 		ra.CustomAbort(http.StatusInternalServerError, "")
@@ -357,6 +361,9 @@ func (ra *RepositoryAPI) Delete() {
 				repoName, err))
 			return
 		}
+
+		log.Info("exist...... ")
+
 		if err = dao.DeleteRepository(repoName); err != nil {
 			log.Errorf("failed to delete repository %s: %v", repoName, err)
 			ra.CustomAbort(http.StatusInternalServerError, "")
