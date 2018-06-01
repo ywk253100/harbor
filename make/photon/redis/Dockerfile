@@ -1,6 +1,6 @@
 FROM vmware/photon:1.0
 
-RUN tdnf distro-sync -y \
+RUN tdnf distro-sync -y || echo \
     && tdnf install -y redis sudo \
     && mkdir /data \
     && chown redis:redis /data
