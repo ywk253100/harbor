@@ -239,8 +239,14 @@ func (ra *RepositoryAPI) Delete() {
 
 	tags := []string{}
 	tag := ra.GetString(":tag")
+
+	log.Info("the requestion tag %s", tag)
+
 	if len(tag) == 0 {
 		tagList, err := rc.ListTag()
+
+		log.Info("all tags %s", tagList)
+
 		if err != nil {
 			log.Errorf("error occurred while listing tags of %s: %v", repoName, err)
 
