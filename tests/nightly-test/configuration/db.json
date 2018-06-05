@@ -1,5 +1,4 @@
 {
-    "hostname": "$ip",
     "ui_url_protocol":"https",
     "auth_mode":"db_auth"
 }

@@ -31,6 +31,7 @@ get_installer() {
 }
 
 set_harbor_cfg() {
+    sed "s/reg.mydomain.com/$IP/" -i $installer_dir/harbor/harbor.cfg
     python ../configuration/edit-cfg.py --config $installer_dir/harbor/harbor.cfg --in-json ../configuration/$1.json
 }
 

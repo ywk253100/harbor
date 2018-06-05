@@ -158,6 +158,7 @@ class OfflineDeployer(Deployer):
             cmd = SHELL_SCRIPT_DIR + "/offline_installer.sh %s %s %s" % (self.auth_mode, self.ip, self.url)
             print cmd
             os.system(cmd)
+            return self.ip
         except Exception as e:
             logger.info("Caught Exception When To Deploy offline installer : " + str(e))
 
