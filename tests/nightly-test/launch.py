@@ -109,6 +109,9 @@ if build_type == "ova" :
             ova_deployer.destory()
 
 elif build_type == "installer" :
-    logger.info("Going to download installer image to install")
+    offline_deployer = OfflineDeployer(auth_mode, image_url)
+    logger.info("Going to deploy harbor offline..")
+    harbor_endpoints, vm_names = offline_deployer.deploy()
+
 elif build_type == "all" :
     logger.info("launch ova and installer")

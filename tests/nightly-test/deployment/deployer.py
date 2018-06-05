@@ -9,6 +9,8 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(dir_path + '../utils')
 import govc_utils
 import nlogging
+import urllib
+import socket
 logger = nlogging.create_logger(__name__)
 
 class Deployer(object):
@@ -143,16 +145,23 @@ class OVADeployer(Deployer):
         for item in self.ova_names:
             govc_utils.destoryvm(self.vc_host, self.vc_user, self.vc_password, item)
 
-
 class OfflineDeployer(Deployer):
 
-    def __init__(self):
-        self.vm_host = '' 
-        self.vm_user = '' 
-        self.vm_password = '' 
+    def __init__(self, auth_mode, url):
+        self.auth_mode = auth_mode
+        self.url = url
+        self.ip = socket.gethostbyname(socket.gethostname())        
 
     def deploy(self):
-        pass
+        try:
+            SHELL_SCRIPT_DIR = os.getcwd() + '/shellscript/'
+            cmd = SHELL_SCRIPT_DIR + "/offline_installer.sh %s %s %s" % (self.auth_mode, self.ip, self.url)
+            print cmd
+            os.system(cmd)
+        except Exception as e:
+            logger.info("Caught Exception When To Deploy offline installer : " + str(e))
 
     def destory(self):
+        ## clean env
         pass
+        
