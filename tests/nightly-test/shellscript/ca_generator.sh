@@ -15,7 +15,7 @@ mkdir -p "${ca_download_dir}"
 cert="${data_dir}/cert/server.crt"
 key="${data_dir}/cert/server.key"
 
-function generateCerts {
+generateCerts() {
   # Create CA certificate
   openssl req \
       -newkey rsa:4096 -nodes -sha256 -keyout harbor_ca.key \
@@ -24,16 +24,13 @@ function generateCerts {
   # Generate a Certificate Signing Request
   openssl req \
       -newkey rsa:4096 -nodes -sha256 -keyout $ip_address.key \
-      -out $ip_address.csr -subj "/C=CN/ST=PEK/L=BeiJing/O=VMware/CN=$ip_address"
+      -out $ip_address.csr -subj "/C=CN/ST=PEK/L=BeiJing/O=VMware/CN=HarborManager"
   
   # Generate the certificate of local registry host
-  if [ $generateCertWithip_address == true ]; then
-    openssl x509 -req -days 365 -in $ip_address.csr -CA harbor_ca.crt -CAkey harbor_ca.key -CAcreateserial -out $ip_address.crt
-  else
-    echo subjectAltName = IP:$ip_address > extfile.cnf
-    openssl x509 -req -days 365 -in $ip_address.csr -CA harbor_ca.crt \
-      -CAkey harbor_ca.key -CAcreateserial -extfile extfile.cnf -out $ip_address.crt      
-  fi
+  echo subjectAltName = IP:$ip_address > extfile.cnf
+  openssl x509 -req -days 365 -in $ip_address.csr -CA harbor_ca.crt \
+    -CAkey harbor_ca.key -CAcreateserial -extfile extfile.cnf -out $ip_address.crt      
+
 
   # Copy to harbor default location
   mkdir -p /data/cert
