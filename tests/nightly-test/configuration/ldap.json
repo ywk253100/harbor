@@ -1,5 +1,5 @@
 {
     "hostname": "$ip",
     "ui_url_protocol":"https",
-    "auth_mode":"ldap",
+    "auth_mode":"ldap"
 }

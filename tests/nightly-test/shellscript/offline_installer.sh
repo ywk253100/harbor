@@ -4,13 +4,15 @@ set -e
 
 installer_dir="/harbor"
 if [ -d $installer_dir ]; then    
-    rm -rf ./$installer_dir/*
+    rm -rf $installer_dir/*
 else
     mkdir -p $installer_dir
 fi
 
+CUR=$PWD
+
 generate_ca() {
-    ./ca_generator.sh
+    ./ca_generator.sh $1
 }
 
 get_installer() {
@@ -23,11 +25,13 @@ get_installer() {
     fi
     curl -O $target_url
     mv ./harbor-offline-installer-latest.tgz $installer_dir
-    tar -zvxf $installer_dir/harbor-offline-installer-latest.tgz
+    cd $installer_dir
+    tar -zvxf ./harbor-offline-installer-latest.tgz
+    cd $CUR
 }
 
 set_harbor_cfg() {
-    python ../configuration/edit-cfg.py --config $installer_dir/harbor/harbor.cfg --in-json $2.json
+    python ../configuration/edit-cfg.py --config $installer_dir/harbor/harbor.cfg --in-json ../configuration/$1.json
 }
 
 # have notary and clair installed.

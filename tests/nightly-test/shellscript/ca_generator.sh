@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -euf -o pipefail
+set -e
 
 umask 077
 
