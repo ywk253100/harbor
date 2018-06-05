@@ -8,7 +8,6 @@ if [ -d $installer_dir ]; then
 else
     mkdir -p $installer_dir
 fi
-cd $installer_dir
 
 generate_ca() {
     ./ca_generator.sh
@@ -23,16 +22,17 @@ get_installer() {
         target_url=$1
     fi
     curl -O $target_url
-    tar -zvxf harbor-offline-installer-latest.tgz
+    mv ./harbor-offline-installer-latest.tgz $installer_dir
+    tar -zvxf $installer_dir/harbor-offline-installer-latest.tgz
 }
 
 set_harbor_cfg() {
-    python ../configuration/edit-cfg.py --config ./harbor/harbor.cfg --in-json $2.json
+    python ../configuration/edit-cfg.py --config $installer_dir/harbor/harbor.cfg --in-json $2.json
 }
 
 # have notary and clair installed.
 install() {
-    ./install.sh --with-notary --with-clair 
+    $installer_dir/harbor/install.sh --with-notary --with-clair 
 }
 
 main() {
