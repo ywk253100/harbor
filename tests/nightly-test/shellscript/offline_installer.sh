@@ -12,7 +12,8 @@ fi
 CUR=$PWD
 
 generate_ca() {
-    ./ca_generator.sh $1
+    ./$PWD/tests/nightly-test/shellscript/ca_generator.sh $1
+    # ./ca_generator.sh $1
 }
 
 get_installer() {
@@ -32,7 +33,7 @@ get_installer() {
 
 set_harbor_cfg() {
     sed "s/reg.mydomain.com/$IP/" -i $installer_dir/harbor/harbor.cfg
-    python ../configuration/edit-cfg.py --config $installer_dir/harbor/harbor.cfg --in-json ../configuration/$1.json
+    python ./$PWD/tests/nightly-test/configuration/edit-cfg.py --config $installer_dir/harbor/harbor.cfg --in-json ./$PWD/tests/nightly-test/configuration/$1.json
 }
 
 # have notary and clair installed.

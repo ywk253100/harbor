@@ -154,7 +154,7 @@ class OfflineDeployer(Deployer):
 
     def deploy(self):
         try:
-            SHELL_SCRIPT_DIR = os.getcwd() + '/shellscript/'
+            SHELL_SCRIPT_DIR = os.getcwd() + '/tests/nightly-test/shellscript/'
             cmd = SHELL_SCRIPT_DIR + "/offline_installer.sh %s %s %s" % (self.auth_mode, self.ip, self.url)
             print cmd
             os.system(cmd)
