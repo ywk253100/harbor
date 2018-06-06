@@ -1,6 +1,6 @@
 {
     "ui_url_protocol": "https",
-    "auth_mode": "ldap",
+    "auth_mode": "ldap_auth",
     "ldap_url": "ldap://10.161.127.236",
     "ldap_searchdn": "cn=admin,dc=example,dc=com",
     "ldap_search_pwd": "admin",

@@ -1,0 +1,9 @@
+{
+    "vc_host": "10.160.18.102",
+    "vc_user": "administrator@vsphere.local",
+    "vc_password": "Admin1@3",
+    "datastore": "datastore1",
+    "cluster": "MyCluster",
+    "ova_password": "zhu88jie",
+    "ova_name": "sample"
+}

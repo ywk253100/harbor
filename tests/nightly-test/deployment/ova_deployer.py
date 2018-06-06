@@ -1,4 +1,3 @@
-import abc
 import logging
 import os
 import sys
@@ -11,20 +10,10 @@ import govc_utils
 import nlogging
 import urllib
 import socket
+import harbor_util
 logger = nlogging.create_logger(__name__)
 
-class Deployer(object):
-    __metaclass__ = abc.ABCMeta
-
-    @abc.abstractmethod
-    def deploy(self):
-        return
-
-    @abc.abstractmethod
-    def destory(self):
-        return
-
-class OVADeployer(Deployer):
+class OVADeployer():
 
     def __init__(self, vc_host, vc_user, vc_password, ds, cluster, ova_path, ova_name, ova_root_password, count, 
                 dry_run, auth_mode, ldap_url, ldap_searchdn, ldap_search_pwd, ldap_filter, ldap_basedn, ldap_uid,
@@ -144,36 +133,3 @@ class OVADeployer(Deployer):
     def destory(self):
         for item in self.ova_names:
             govc_utils.destoryvm(self.vc_host, self.vc_user, self.vc_password, item)
-
-class OfflineDeployer(Deployer):
-
-    def __init__(self, auth_mode, url):
-        self.auth_mode = auth_mode
-        self.ip = self.__get_ip()
-        self.url = url        
-
-    def deploy(self):
-        try:
-            SHELL_SCRIPT_DIR = os.getcwd() + '/tests/nightly-test/shellscript/'
-            cmd = SHELL_SCRIPT_DIR + "/offline_installer.sh %s %s %s" % (self.auth_mode, self.ip, self.url)
-            print cmd
-            os.system(cmd)
-            return self.ip
-        except Exception as e:
-            logger.info("Caught Exception When To Deploy offline installer : " + str(e))
-
-    def destory(self):
-        ## clean env
-        pass
-    
-    def __get_ip(self):
-        try:
-            arg='ip route list'    
-            p=subprocess.Popen(arg,shell=True,stdout=subprocess.PIPE)
-            data = p.communicate()
-            sdata = data[0].split()
-            ip = sdata[ sdata.index('src')+1 ]
-            return ip 
-        except Exception as e:
-            logger.info("Caught Exception on getting ip : " + str(e))
-        

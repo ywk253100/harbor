@@ -16,6 +16,8 @@ import nlogging
 logger = nlogging.create_logger(__name__)
 import test_executor
 from deployer import *
+import argparse
+import json
 
 if len(sys.argv)!=9 :
     logger.info("python launch.py <build_type> <image_url> <test suitename> <config_file> <dry_run> <auth_mode> <destory>")
@@ -30,6 +32,18 @@ deploy_count = int(sys.argv[5])
 dry_run = sys.argv[6]
 auth_mode = sys.argv[7]
 destory = sys.argv[8]
+
+def main():
+    parser = argparse.ArgumentParser(description='The script modifes harbor.cfg based on input')
+    parser.add_argument('--install-type', '-i', dest='cfg_path', required=True, help='The path to harbor.cfg')
+    parser.add_argument('--url', '-u', dest='json_input', required=True, help='The path to the json file input file in form of {"k":"v"} to write v to key k in harbor.cfg, if k does not appear in the cfg file as a key, it will be ignored silently.')
+    parser.add_argument('--test_suite', '-ts', dest='cfg_path', required=True, help='The path to harbor.cfg')
+    parser.add_argument('--auth_mode', '-u', dest='json_input', required=True, help='The path to the json file input file in form of {"k":"v"} to write v to key k in harbor.cfg, if k does not appear in the cfg file as a key, it will be ignored silently.')
+    parser.add_argument('--destory', '-i', dest='cfg_path', required=True, help='The path to harbor.cfg')
+
+    args = parser.parse_args() 
+
+
 config_file = os.getcwd() + "/harbor_nightly_test/testenv.ini"
 config = ConfigParser.ConfigParser()
 config.read(config_file)
