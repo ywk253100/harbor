@@ -12,7 +12,7 @@ fi
 CUR=$PWD
 
 generate_ca() {
-    ./$PWD/tests/nightly-test/shellscript/ca_generator.sh $1
+    ./tests/nightly-test/shellscript/ca_generator.sh $1
     # ./ca_generator.sh $1
 }
 
@@ -32,13 +32,28 @@ get_installer() {
 }
 
 set_harbor_cfg() {
-    sed "s/reg.mydomain.com/$IP/" -i $installer_dir/harbor/harbor.cfg
-    python ./$PWD/tests/nightly-test/configuration/edit-cfg.py --config $installer_dir/harbor/harbor.cfg --in-json ./$PWD/tests/nightly-test/configuration/$1.json
+    sed "s/reg.mydomain.com/$1/" -i $installer_dir/harbor/harbor.cfg
+    python ./tests/nightly-test/configuration/edit-cfg.py --config $installer_dir/harbor/harbor.cfg --in-json ./tests/nightly-test/configuration/$2.json
 }
 
 # have notary and clair installed.
 install() {
     $installer_dir/harbor/install.sh --with-notary --with-clair 
+}
+
+clean_up() {
+    curl --insecure -s -L -H "Accept: application/json" https://$1/ | grep "Harbor"  > /dev/null
+    if [ $? -nq 0 ]; then 
+        echo "Harbor is not running on $1"
+        return 0
+    fi
+    
+    # Clean data...
+    cd $installer_dir/harbor
+    docker-compose -f docker-compose.yml -f docker-compose.notary.yml -f docker-compose.clair.yml down -v
+    cd /data
+    rm -rf ./*
+    cd $CUR
 }
 
 main() {
@@ -48,7 +63,7 @@ main() {
 
     get_installer $url
     generate_ca $ip_address
-    set_harbor_cfg $auth_type
+    set_harbor_cfg $ip_address $auth_type
     install
 }
 
