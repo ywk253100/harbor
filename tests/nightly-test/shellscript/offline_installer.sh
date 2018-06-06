@@ -53,6 +53,8 @@ clean_up() {
     docker-compose -f docker-compose.yml -f docker-compose.notary.yml -f docker-compose.clair.yml down -v
     cd /data
     rm -rf ./*
+    cd /var/log/harbor
+    rm -rf ./*
     cd $CUR
 }
 
