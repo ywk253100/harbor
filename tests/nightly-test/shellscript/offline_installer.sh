@@ -3,12 +3,6 @@
 set -e
 
 installer_dir="/harbor"
-if [ -d $installer_dir ]; then    
-    rm -rf $installer_dir/*
-else
-    mkdir -p $installer_dir
-fi
-
 CUR=$PWD
 
 generate_ca() {
@@ -42,12 +36,15 @@ install() {
     ./install.sh --with-notary --with-clair 
 }
 
-clean_up() {
+init() {
     if [ -d $installer_dir/harbor ]; then
         cd $installer_dir/harbor
-        if [ -n "$(docker-compose -f docker-compose.yml -f docker-compose.notary.yml -f docker-compose.clair.yml ps -q)"  ]
+        if [ -n "$(docker-compose -f docker-compose.yml -f docker-compose.notary.yml -f docker-compose.clair.yml ps -q)" ]; then
             docker-compose -f docker-compose.yml -f docker-compose.notary.yml -f docker-compose.clair.yml down -v
         fi
+        rm -rf $installer_dir/*
+    else
+        mkdir -p $installer_dir
     fi
     
     # Clean data...
@@ -63,7 +60,7 @@ main() {
     local ip_address=$2
     local url=$3
 
-    clean_up
+    init
     get_installer $url
     generate_ca $ip_address
     set_harbor_cfg $ip_address $auth_type
