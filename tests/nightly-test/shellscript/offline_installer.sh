@@ -46,12 +46,12 @@ clean_up() {
     curl --insecure -s -L -H "Accept: application/json" https://$1/ | grep "Harbor"  > /dev/null
     if [ $? -nq 0 ]; then 
         echo "Harbor is not running on $1"
+        cd $installer_dir/harbor
+        docker-compose -f docker-compose.yml -f docker-compose.notary.yml -f docker-compose.clair.yml down -v
         return 0
     fi
     
     # Clean data...
-    cd $installer_dir/harbor
-    docker-compose -f docker-compose.yml -f docker-compose.notary.yml -f docker-compose.clair.yml down -v
     cd /data
     rm -rf ./*
     cd /var/log/harbor
@@ -64,6 +64,7 @@ main() {
     local ip_address=$2
     local url=$3
 
+    clean_up $2
     get_installer $url
     generate_ca $ip_address
     set_harbor_cfg $ip_address $auth_type
