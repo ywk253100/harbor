@@ -149,7 +149,8 @@ class OfflineDeployer(Deployer):
 
     def __init__(self, auth_mode, url):
         self.auth_mode = auth_mode
-        self.ip = self.__get_ip() 
+        self.ip = self.__get_ip()
+        self.url = url        
 
     def deploy(self):
         try:
