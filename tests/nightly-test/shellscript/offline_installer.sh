@@ -43,11 +43,11 @@ install() {
 }
 
 clean_up() {
-    curl --insecure -s -L -H "Accept: application/json" https://$1/ | grep "Harbor"  > /dev/null
-    if [ $? -eq 0 ]; then 
-        echo "Harbor is not running on $1"
+    if [ -d $installer_dir/harbor ]; then
         cd $installer_dir/harbor
-        docker-compose -f docker-compose.yml -f docker-compose.notary.yml -f docker-compose.clair.yml down -v
+        if [ -n "$(docker-compose -f docker-compose.yml -f docker-compose.notary.yml -f docker-compose.clair.yml ps -q)"  ]
+            docker-compose -f docker-compose.yml -f docker-compose.notary.yml -f docker-compose.clair.yml down -v
+        fi
     fi
     
     # Clean data...
@@ -63,7 +63,7 @@ main() {
     local ip_address=$2
     local url=$3
 
-    clean_up $2
+    clean_up
     get_installer $url
     generate_ca $ip_address
     set_harbor_cfg $ip_address $auth_type
