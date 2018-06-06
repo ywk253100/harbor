@@ -149,8 +149,7 @@ class OfflineDeployer(Deployer):
 
     def __init__(self, auth_mode, url):
         self.auth_mode = auth_mode
-        self.url = url
-        self.ip = socket.gethostbyname(socket.gethostname())        
+        self.ip = self.__get_ip() 
 
     def deploy(self):
         try:
@@ -165,4 +164,15 @@ class OfflineDeployer(Deployer):
     def destory(self):
         ## clean env
         pass
+    
+    def __get_ip(self):
+        try:
+            arg='ip route list'    
+            p=subprocess.Popen(arg,shell=True,stdout=subprocess.PIPE)
+            data = p.communicate()
+            sdata = data[0].split()
+            ip = sdata[ sdata.index('src')+1 ]
+            return ip 
+        except Exception as e:
+            logger.info("Caught Exception on getting ip : " + str(e))
         
