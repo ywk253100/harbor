@@ -38,7 +38,8 @@ set_harbor_cfg() {
 
 # have notary and clair installed.
 install() {
-    $installer_dir/harbor/install.sh --with-notary --with-clair 
+    cd $installer_dir/harbor
+    ./install.sh --with-notary --with-clair 
 }
 
 clean_up() {
