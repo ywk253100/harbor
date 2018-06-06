@@ -44,11 +44,10 @@ install() {
 
 clean_up() {
     curl --insecure -s -L -H "Accept: application/json" https://$1/ | grep "Harbor"  > /dev/null
-    if [ $? -nq 0 ]; then 
+    if [ $? -eq 0 ]; then 
         echo "Harbor is not running on $1"
         cd $installer_dir/harbor
         docker-compose -f docker-compose.yml -f docker-compose.notary.yml -f docker-compose.clair.yml down -v
-        return 0
     fi
     
     # Clean data...
