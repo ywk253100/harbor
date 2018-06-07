@@ -20,10 +20,9 @@ class Parameters(object):
     @staticmethod
     def parse_input():
         usage = "usage: %prog [options] <installer> <url> <auth_mode>"
-        parser = OptionParser(usage)
-        parser.add_option('--installer-type', '-i', dest='installer_type', required=True, help='The installer type: offline or ova.')
-        parser.add_option('--url', '-u', dest='url', required=True, help='The url to dowoload the installer.')
+        parser = OptionParser(usage)  
         parser.add_option('--auth_mode', '-u', dest='auth_mode', required=True, help='')
+        parser.add_option('--endpoint', '-u', dest='url', required=True, help='The url to dowoload the installer.')
 
         (options, args) = parser.parse_args()
         return (options.installer_type, options.url, options.auth_mode)

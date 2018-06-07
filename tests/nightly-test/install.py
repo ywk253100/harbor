@@ -8,6 +8,7 @@ sys.path.append(dir_path + '/utils')
 sys.path.append(dir_path + '/deployment')
 import nlogging
 from offline_deployer import *
+from ova_deployer import *
 logger = nlogging.create_logger(__name__)
 import argparse
 
@@ -37,7 +38,10 @@ def main():
     
     try:
         if commandline_input.installer_type == 'ova':
-            pass
+            ova_deployer = OVADeployer(commandline_input.auth_mode, commandline_input.url)
+            logger.info("Going to deploy harbor ova..")
+            harbor_endpoint = ova_deployer.deploy()
+            print harbor_endpoint 
         elif commandline_input.installer_type == 'offline':
             offline_deployer = OfflineDeployer(commandline_input.auth_mode, commandline_input.url)
             logger.info("Going to deploy harbor offline..")

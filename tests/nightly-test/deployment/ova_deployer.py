@@ -11,34 +11,43 @@ import nlogging
 import urllib
 import socket
 import harbor_util
+import buildweb_utils
 logger = nlogging.create_logger(__name__)
+import json
 
 class OVADeployer():
 
-    def __init__(self, vc_host, vc_user, vc_password, ds, cluster, ova_path, ova_name, ova_root_password, count, 
-                dry_run, auth_mode, ldap_url, ldap_searchdn, ldap_search_pwd, ldap_filter, ldap_basedn, ldap_uid,
-                ldap_scope, ldap_timeout):
-        self.vc_host = vc_host 
-        self.vc_user = vc_user 
-        self.vc_password = vc_password 
-        self.ds = ds 
-        self.cluster = cluster  
-        self.ova_path = ova_path 
-        self.ova_name = ova_name 
-        self.ova_root_password = ova_root_password 
-        self.dry_run = dry_run
+    def __init__(self, auth_mode, ova_path, count=1):
+
+        if ova_path == "latest" :
+            self.ova_path = buildweb_utils.get_latest_build_url('master','beta')
+
+        with open(os.getcwd() + '/tests/nightly-test/configuration/ova.json') as ova_config:
+            ova_data = json.load(ova_config)
+        
+        self.vc_host = ova_data["vc_host"] 
+        self.vc_user = ova_data["vc_user"]  
+        self.vc_password = ova_data["vc_password"]  
+        self.ds = ova_data["datastore"]  
+        self.cluster = ova_data["cluster"]   
+        self.ova_name = ova_data["ova_name"] 
+        self.ova_root_password = ova_data["ova_password"]
+                   
         self.count = count
         self.auth_mode=auth_mode
 
         if auth_mode == 'ldap_auth':
-            self.ldap_url = ldap_url
-            self.ldap_searchdn = ldap_searchdn
-            self.ldap_search_pwd = ldap_search_pwd
-            self.ldap_filter = ldap_filter
-            self.ldap_basedn = ldap_basedn
-            self.ldap_uid = ldap_uid
-            self.ldap_scope = ldap_scope
-            self.ldap_timeout = ldap_timeout
+            with open(os.getcwd() + '/tests/nightly-test/configuration/ldap_auth.json') as ldap_config:
+                ldap_data = json.load(ldap_config)
+
+            self.ldap_url = ldap_data["ldap_url"] 
+            self.ldap_searchdn = ldap_data["ldap_searchdn"] 
+            self.ldap_search_pwd = ldap_data["ldap_search_pwd"] 
+            self.ldap_filter = ldap_data["ldap_filter"] 
+            self.ldap_basedn = ldap_data["ldap_basedn"] 
+            self.ldap_uid = ldap_data["ldap_uid"] 
+            self.ldap_scope = ldap_data["ldap_scope"] 
+            self.ldap_timeout = ldap_data["ldap_timeout"] 
                 
         self.harbor_password='Harbor12345'
         self.log_path=None 
@@ -111,25 +120,34 @@ class OVADeployer():
         for i in range(0, self.count):
             cmd = self.__compose_cmd(self.ova_names[i])
             logger.info(cmd)
-            if self.dry_run == "true" :
-                logger.info("Dry run ...")
-            else:
-                try:
-                    subprocess.check_output(cmd, shell=True)
-                except Exception, e:
-                    logger.info(e)
-                    time.sleep(5)
-                    # try onre more time if any failure.
-                    subprocess.check_output(cmd, shell=True)
+            try:
+                subprocess.check_output(cmd, shell=True)
+            except Exception, e:
+                logger.info(e)
+                time.sleep(5)
+                # try onre more time if any failure.
+                subprocess.check_output(cmd, shell=True) 
             logger.info("Successfully deployed harbor OVA.")
 
             ova_endpoint = ''
             ova_endpoint = govc_utils.getvmip(self.vc_host, self.vc_user, self.vc_password, self.ova_names[i])
             if ova_endpoint is not '':
-                self.ova_endpoints.append(ova_endpoint) 
+                self.ova_endpoints.append(ova_endpoint)
 
-        return self.ova_endpoints, self.ova_names
+        if self.validate(): 
+            return self.ova_endpoints, self.ova_names
+
+        return None
 
     def destory(self):
         for item in self.ova_names:
             govc_utils.destoryvm(self.vc_host, self.vc_user, self.vc_password, item)
+
+    def validate(self):
+        for item in self.ova_endpoints:
+            is_harbor_ready = harbor_util.wait_for_harbor_ready("https://"+item)
+            if not is_harbor_ready:
+                logger.info("Harbor is not ready after 10 minutes.")
+                return False
+            logger.info("%s is ready for test now..." % item)
+        return True
