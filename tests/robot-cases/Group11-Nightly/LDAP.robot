@@ -15,8 +15,6 @@
 *** Settings ***
 Documentation  Harbor BATs
 Resource  ../../resources/Util.robot
-Suite Setup  Nightly Test Setup  ${ip}  ${SSH_PWD}  ${HARBOR_PASSWORD}  ${ip1}
-Suite Teardown  Collect Nightly Logs  ${ip}  ${SSH_PWD}  ${ip1}
 Default Tags  Nightly
 
 *** Variables ***
@@ -107,3 +105,18 @@ Test Case - Ldap User Push An Image
 
 Test Case - Ldap User Can Not login
     Docker Login Fail  ${ip}  test  123456
+
+Test Case - Manage Project Member
+    ##todo
+
+Test Case - Manage project publicity
+    ##todo
+    
+Test Case - Assign Sys Admin
+    ##todo
+
+Test Case - User View Projects
+    ##todo
+
+Test Case - User View Logs
+    ##todo

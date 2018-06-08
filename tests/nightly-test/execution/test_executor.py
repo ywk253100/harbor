@@ -7,29 +7,32 @@ import sys
 from subprocess import call
 import json
 
+dir_path = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(dir_path + '../utils')
+import harbor_util
 import nlogging
 logger = nlogging.create_logger(__name__)
 
-# Needs have docker installed.
-def execute(harbor_endpoints, vm_names, harbor_root_pwd, test_suite, auth_mode ,vc_host, vc_user, vc_password, harbor_pwd='Harbor12345') :
-    cmd = ''
-    exe_result = -1
-    cmd_base = "docker run -i --privileged -v %s:/drone -w /drone vmware/harbor-e2e-engine:1.38 " % os.getcwd()
+class Executor(): 
 
-    if len(harbor_endpoints) == 1:
-        cmd_pybot = "pybot -v ip:%s -v vm_name:%s -v ip1: -v HARBOR_PASSWORD:%s -v SSH_PWD:%s -v vc_host:%s -v vc_user:%s -v vc_password:%s " % (harbor_endpoints[0], vm_names[0], harbor_pwd, harbor_root_pwd, vc_host, vc_user, vc_password)
+    def __init__(self, harbor_endpoints, harbor_pwd='Harbor12345'):
+        self.harbor_endpoints = harbor_endpoints
+        self.harbor_user = "admin"
+        self.harbor_pwd = harbor_pwd
+        self.auth_mode = harbor_util.get_auth_mode(self.harbor_endpoints, self.harbor_user, self.harbor_pwd)
+        self.e2e_engine = "vmware/harbor-e2e-engine:1.38"        
+
+    def get_ts(self, auth_mode):
+        with open(os.getcwd() + '/tests/nightly-test/configuration/tc.json') as ts_config:
+            ts_data = json.load(ts_config)
+        return ts_data[auth_mode]
+
+    def get_ca(self):
+        harbor_util.get_ca(self.harbor_endpoints, self.harbor_user, self.harbor_pwd)
     
-    if len(harbor_endpoints) == 2:
-        cmd_pybot = "pybot -v ip:%s -v vm_name:%s -v ip1:%s -v vm_name1:%s -v HARBOR_PASSWORD:%s -v SSH_PWD:%s -v vc_host:%s -v vc_user:%s -v vc_password:%s " % (harbor_endpoints[0], vm_names[0], harbor_endpoints[1], vm_names[1], harbor_pwd, harbor_root_pwd, vc_host, vc_user, vc_password)
-
-    cmd = cmd_base + cmd_pybot
-    if test_suite == 'Nightly':
-        if auth_mode == 'ldap_auth':
-            cmd = cmd + "/drone/tests/robot-cases/Group11-Nightly/LDAP.robot"           
-        else:           
-            cmd = cmd + "/drone/tests/robot-cases/Group11-Nightly/Nightly.robot"
-
+    def __execute_test(self, cmd):
         logger.info(cmd)
+        exe_result = -1
         p = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE)
         while True:
             out = p.stderr.read(1)
@@ -39,29 +42,25 @@ def execute(harbor_endpoints, vm_names, harbor_root_pwd, test_suite, auth_mode ,
                 sys.stdout.write(out)
                 sys.stdout.flush()
         exe_result = p.returncode
+        return exe_result
 
-    if test_suite == 'Replication':
-        cmd = cmd + "/drone/tests/robot-cases/Group11-Nightly/Replication.robot"
+    def execute(self):
+        cmd = ''
+        
+        cmd_base = "docker run -i --privileged -v %s:/drone -v /harbor/ca:/ca -w /drone %s " % (os.getcwd(), self.e2e_engine)
 
-        logger.info(cmd)
-        p = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE)
-        while True:
-            out = p.stderr.read(1)
-            if out == '' and p.poll() != None:
-                break
-            if out != '':
-                sys.stdout.write(out)
-                sys.stdout.flush()
-        exe_result = p.returncode
+        if len(self.harbor_endpoints) == 1:
+            cmd_pybot = "pybot -v ip:%s -v ip1: -v HARBOR_PASSWORD:%s " % (self.harbor_endpoints[0], self.harbor_pwd)
+        
+        if len(self.harbor_endpoints) == 2:
+            cmd_pybot = "pybot -v ip:%s -v ip1:%s -v HARBOR_PASSWORD:%s " % (self.harbor_endpoints[0], self.harbor_endpoints[1], self.harbor_pwd)
 
-    if test_suite == 'Longevity':
-        cmd = cmd + "/drone/tests/robot-cases/Group12-Longevity/Longevity.robot > /dev/null 2>&1"
-        logger.info(cmd)
-        exe_result = subprocess.call(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-    
-    collect_log()
-    return exe_result == 0
+        cmd = cmd_base + cmd_pybot
+        
+        # any test execution will be setup + common + auth_mode specific + teardown.
+        cmd = cmd + self.get_ts("setup") + " "
+        cmd = cmd + self.get_ts("common") + " "       
+        cmd = cmd + self.get_ts(self.auth_mode) + " "
+        cmd = cmd + self.get_ts("teardown") + " "
 
-# Needs to move log.html to another path it will be overwrite by any pybot run.
-def collect_log():
-    pass
+        return self.__execute_test(cmd)

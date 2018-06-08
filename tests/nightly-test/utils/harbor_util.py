@@ -51,3 +51,16 @@ def wait_for_harbor_ready(harbor_endpoint, timeout=600):
 
 def get_harbor_version(harbor_endpoint, harbor_user, harbor_pwd):
    return request(harbor_endpoint, '/systeminfo', 'get', harbor_user, harbor_pwd)['harbor_version']
+
+def get_auth_mode(harbor_endpoint, harbor_user, harbor_pwd):
+   return request(harbor_endpoint, '/systeminfo', 'get', harbor_user, harbor_pwd)['auth_mode']
+
+def get_ca(harbor_endpoint, harbor_user, harbor_pwd):
+   ca_contend = request(harbor_endpoint, '/systeminfo/getcert', 'get', harbor_user, harbor_pwd)
+   open("ca.crt", 'wb').write(ca_contend)
+
+def main():
+    print get_auth_mode('10.193.22.115', 'admin', 'Harbor12345')
+
+if __name__ == '__main__':
+    main()

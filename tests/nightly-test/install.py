@@ -40,13 +40,15 @@ def main():
         if commandline_input.installer_type == 'ova':
             ova_deployer = OVADeployer(commandline_input.auth_mode, commandline_input.url)
             logger.info("Going to deploy harbor ova..")
-            harbor_endpoint = ova_deployer.deploy()
-            print harbor_endpoint 
+            harbor_endpoint, vm_name = ova_deployer.deploy()
+            print harbor_endpoint + " " + vm_name 
         elif commandline_input.installer_type == 'offline':
             offline_deployer = OfflineDeployer(commandline_input.auth_mode, commandline_input.url)
             logger.info("Going to deploy harbor offline..")
             harbor_endpoint = offline_deployer.deploy()
-            print harbor_endpoint          
+            print harbor_endpoint 
+        else:
+            print "Unsupported installer type."        
 
     except Exception, e:
         print e

@@ -21,6 +21,8 @@ class OVADeployer():
 
         if ova_path == "latest" :
             self.ova_path = buildweb_utils.get_latest_build_url('master','beta')
+        else:
+            self.ova_path = ova_path
 
         with open(os.getcwd() + '/tests/nightly-test/configuration/ova.json') as ova_config:
             ova_data = json.load(ova_config)

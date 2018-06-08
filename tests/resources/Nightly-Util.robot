@@ -31,11 +31,7 @@ Nightly Test Setup
 
 CA Setup
     [Arguments]  ${ip}  ${SSH_PWD}  ${HARBOR_PASSWORD}
-    Open Connection    ${ip}
-    Login    ${SSH_USER}    ${SSH_PWD}
-    SSHLibrary.Get File  /data/ca_download/ca.crt
-    Close All Connections
-    Run  mv ca.crt harbor_ca.crt
+    Run  mv /ca/ca.crt harbor_ca.crt
     Generate Certificate Authority For Chrome  ${HARBOR_PASSWORD}	
 
 Collect Nightly Logs
