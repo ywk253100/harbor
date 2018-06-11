@@ -21,7 +21,7 @@ class Executor():
         self.e2e_engine = "vmware/harbor-e2e-engine:1.38"        
 
     def get_ts(self, auth_mode):
-        with open(os.getcwd() + '/tests/nightly-test/configuration/tc.json') as ts_config:
+        with open(os.getcwd() + '/tests/nightly-test/execution/tc.json') as ts_config:
             ts_data = json.load(ts_config)
         return ts_data[auth_mode]
 
