@@ -1,9 +1,9 @@
 {
-    "setup":"robot-cases/Group11-Nightly/Setup.robot",    
-    "common":"robot-cases/Group11-Nightly/Common.robot",
-    "ldap_auth":"robot-cases/Group11-Nightly/LDAP.robot",
-    "db_auth":"robot-cases/Group11-Nightly/DB.robot",
-    "replication":"robot-cases/Group11-Nightly/Replication.robot",
-    "uaa":"robot-cases/Group11-Nightly/UAA.robot",
-    "teardown":"robot-cases/Group11-Nightly/Teardown.robot"
+    "setup":"/drone/tests/robot-cases/Group11-Nightly/Setup.robot",    
+    "common":"/drone/tests/robot-cases/Group11-Nightly/Common.robot",
+    "ldap_auth":"/drone/tests/robot-cases/Group11-Nightly/LDAP.robot",
+    "db_auth":"/drone/tests/robot-cases/Group11-Nightly/DB.robot",
+    "replication":"/drone/tests/robot-cases/Group11-Nightly/Replication.robot",
+    "uaa":"/drone/tests/robot-cases/Group11-Nightly/UAA.robot",
+    "teardown":"/drone/tests/robot-cases/Group11-Nightly/Teardown.robot"
 }
