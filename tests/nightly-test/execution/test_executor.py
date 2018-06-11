@@ -51,9 +51,9 @@ class Executor():
         cmd = cmd_base + cmd_pybot
         
         # any test execution will be setup + common + auth_mode specific + teardown.
-        cmd = cmd + os.getcwd() + '/tests/' + self.get_ts("setup") + " "
-        cmd = cmd + os.getcwd() + '/tests/' + self.get_ts("common") + " "       
-        cmd = cmd + os.getcwd() + '/tests/' + self.get_ts(self.auth_mode) + " "
-        cmd = cmd + os.getcwd() + '/tests/' + self.get_ts("teardown") + " "
+        cmd = cmd + self.get_ts("setup") + " "
+        cmd = cmd + self.get_ts("common") + " "       
+        cmd = cmd + self.get_ts(self.auth_mode) + " "
+        cmd = cmd + self.get_ts("teardown") + " "
 
         return self.__execute_test(cmd)
