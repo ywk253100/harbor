@@ -105,18 +105,3 @@ Test Case - Ldap User Push An Image
 
 Test Case - Ldap User Can Not login
     Docker Login Fail  ${ip}  test  123456
-
-Test Case - Manage Project Member
-    ##todo
-
-Test Case - Manage project publicity
-    ##todo
-    
-Test Case - Assign Sys Admin
-    ##todo
-
-Test Case - User View Projects
-    ##todo
-
-Test Case - User View Logs
-    ##todo
