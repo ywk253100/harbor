@@ -44,7 +44,7 @@ init() {
         if [ -n "$(docker-compose -f docker-compose.yml -f docker-compose.notary.yml -f docker-compose.clair.yml ps -q)" ]; then
             docker-compose -f docker-compose.yml -f docker-compose.notary.yml -f docker-compose.clair.yml down -v
         fi
-        rm -rf $installer_dir/*
+        rm -rf $installer_dir/harbor/*
     else
         mkdir -p $installer_dir
     fi
