@@ -34,9 +34,11 @@ generateCerts() {
 
   # Copy to harbor default location
   mkdir -p /data/cert
+  mkdir -p /harbor/ca
   cp $ip_address.crt $cert
   cp $ip_address.key $key
   cp harbor_ca.crt ${ca_download_dir}/ca.crt
+  cp harbor_ca.crt /harbor/ca/ca.crt
   chown --recursive 10000:10000 ${ca_download_dir}
 }
 

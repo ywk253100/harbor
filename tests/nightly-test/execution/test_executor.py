@@ -48,19 +48,14 @@ class Executor():
         cmd = ''
         
         cmd_base = "docker run -i --privileged -v %s:/drone -v /harbor/ca:/ca -w /drone %s " % (os.getcwd(), self.e2e_engine)
-
-        if len(self.harbor_endpoints) == 1:
-            cmd_pybot = "pybot -v ip:%s -v ip1: -v HARBOR_PASSWORD:%s " % (self.harbor_endpoints[0], self.harbor_pwd)
-        
-        if len(self.harbor_endpoints) == 2:
-            cmd_pybot = "pybot -v ip:%s -v ip1:%s -v HARBOR_PASSWORD:%s " % (self.harbor_endpoints[0], self.harbor_endpoints[1], self.harbor_pwd)
+        cmd_pybot = "pybot -v ip:%s -v ip1: -v HARBOR_PASSWORD:%s " % (self.harbor_endpoints, self.harbor_pwd)
 
         cmd = cmd_base + cmd_pybot
         
         # any test execution will be setup + common + auth_mode specific + teardown.
-        cmd = cmd + self.get_ts("setup") + " "
-        cmd = cmd + self.get_ts("common") + " "       
-        cmd = cmd + self.get_ts(self.auth_mode) + " "
-        cmd = cmd + self.get_ts("teardown") + " "
+        cmd = cmd + os.getcwd() + '/tests/' + self.get_ts("setup") + " "
+        cmd = cmd + os.getcwd() + '/tests/' + self.get_ts("common") + " "       
+        cmd = cmd + os.getcwd() + '/tests/' + self.get_ts(self.auth_mode) + " "
+        cmd = cmd + os.getcwd() + '/tests/' + self.get_ts("teardown") + " "
 
         return self.__execute_test(cmd)
