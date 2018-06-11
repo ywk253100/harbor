@@ -7,7 +7,6 @@ CUR=$PWD
 
 generate_ca() {
     ./tests/nightly-test/shellscript/ca_generator.sh $1
-    # ./ca_generator.sh $1
 }
 
 get_installer() {
@@ -26,7 +25,10 @@ get_installer() {
 }
 
 set_harbor_cfg() {
-    sed "s/reg.mydomain.com/$1/" -i $installer_dir/harbor/harbor.cfg
+    sed "s/reg.mydomain.com/$1/" -i ./tests/nightly-test/configuration/$2.json
+    sed "s/#ldap_searchdn/ldap_searchdn/" -i $installer_dir/harbor/harbor.cfg
+    sed "s/#ldap_search_pwd/ldap_search_pwd/" -i $installer_dir/harbor/harbor.cfg
+    sed "s/#ldap_filter/ldap_filter/" -i $installer_dir/harbor/harbor.cfg
     python ./tests/nightly-test/configuration/edit-cfg.py --config $installer_dir/harbor/harbor.cfg --in-json ./tests/nightly-test/configuration/$2.json
 }
 

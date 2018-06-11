@@ -1,4 +1,5 @@
 {
+    "hostname":"reg.mydomain.com",
     "ui_url_protocol": "https",
     "auth_mode": "ldap_auth",
     "ldap_url": "ldap://10.161.127.236",
