@@ -4,8 +4,9 @@ import os
 import sys
 from optparse import OptionParser
 dir_path = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(dir_path + '/utils')
 sys.path.append(dir_path + '/execution')
-import test_executor
+from test_executor import *
 logger = nlogging.create_logger(__name__)
 import argparse
 
@@ -18,14 +19,14 @@ class Parameters(object):
     @staticmethod
     def parse_input():
         parser = argparse.ArgumentParser(description='run testcase') 
-        parser.add_argument('--auth_mode', '-a', dest='auth_mode', required=True, help='db, ldap or uaa.')
-        parser.add_argument('--endpoint', '-e', dest='harbor endpoint', required=True, help='The endpoint of harbor.')
+        parser.add_argument('--auth-mode', '-a', dest='auth_mode', required=True, help='db, ldap or uaa.')
+        parser.add_argument('--endpoint', '-e', dest='endpoint', required=True, help='The endpoint of harbor.')
 
         args = parser.parse_args()
-        return (args.installer_type, args.auth_mode)
+        return (args.endpoint, args.auth_mode)
 
     def init_from_input(self):
-        (self.installer_type, self.auth_mode) = Parameters.parse_input()
+        (self.endpoint, self.auth_mode) = Parameters.parse_input()
 
 
 def main():

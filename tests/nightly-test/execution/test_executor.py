@@ -1,5 +1,3 @@
-#!/usr/bin/python2
-
 import os, subprocess
 import time
 import sys
