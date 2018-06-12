@@ -11,7 +11,7 @@ generate_ca() {
 
 get_installer() {
     local target_url=""
-    if [ $1='latest' ]; then
+    if [ "$1" = 'latest' ]; then
         target_url="https://storage.googleapis.com/harbor-builds/harbor-offline-installer-latest.tgz"
         echo "URL is not specified. Default url is latest."
     else
