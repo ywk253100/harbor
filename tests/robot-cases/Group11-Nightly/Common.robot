@@ -50,7 +50,7 @@ Test Case - Delete A Project
     ${d}=    Get Current Date    result_format=%m%s
     Sign In Harbor  ${HARBOR_URL}  ${HARBOR_ADMIN}  ${HARBOR_PASSWORD}
     Create An New Project  test${d}
-    Push Image  ${ip}  tester${d}  Test1@34  project${d}  hello-world
+    Push Image  ${ip}  ${HARBOR_ADMIN}  ${HARBOR_PASSWORD}  project${d}  hello-world
     Project Should Not Be Deleted  project${d}
     Go Into Project  project${d}
     Delete Repo  project${d}
@@ -65,10 +65,10 @@ Test Case - Read Only Mode
     Create An New Project  test${d}
 
     Enable Read Only
-    Cannot Push image  ${ip}  tester${d}  Test1@34  project${d}  busybox:latest
+    Cannot Push image  ${ip}  ${HARBOR_ADMIN}  ${HARBOR_PASSWORD}  project${d}  busybox:latest
 
     Disable Read Only
-    Push image  ${ip}  tester${d}  Test1@34  project${d}  busybox:latest
+    Push image  ${ip}  ${HARBOR_ADMIN}  ${HARBOR_PASSWORD}  project${d}  busybox:latest
     Close Browser
 
 Test Case - Repo Size
@@ -121,7 +121,7 @@ Test Case - Push Image
     Sign In Harbor  ${HARBOR_URL}  ${HARBOR_ADMIN}  ${HARBOR_PASSWORD}
     Create An New Project  test${d}
 
-    Push image  ${ip}  tester${d}  Test1@34  test${d}  hello-world:latest
+    Push image  ${ip}  ${HARBOR_URL}  ${HARBOR_ADMIN}  test${d}  hello-world:latest
     Go Into Project  test${d}
     Wait Until Page Contains  test${d}/hello-world
 
@@ -273,8 +273,8 @@ Test Case - User View Logs
     Sign In Harbor  ${HARBOR_URL}  user002  Test1@34
     Create An New Project  project${d}
     
-    Push image  ${ip}  tester${d}  Test1@34  project${d}  busybox:latest
-    Pull image  ${ip}  tester${d}  Test1@34  project${d}  busybox:latest
+    Push image  ${ip}  user002  Test1@34  project${d}  busybox:latest
+    Pull image  ${ip}  user002  Test1@34  project${d}  busybox:latest
 
     Go Into Project  project${d}
     Delete Repo  project${d}
@@ -592,11 +592,10 @@ Test Case - View Scan Results
 Test Case - View Scan Error
     Init Chrome Driver
     ${d}=  get current date  result_format=%m%s
-    Create An New Project With New User  url=${HARBOR_URL}  username=tester${d}  email=tester${d}@vmware.com  realname=tester${d}  newPassword=Test1@34  comment=harbor  projectname=project${d}  public=false
 
     Sign In Harbor  ${HARBOR_URL}  user026  Test1@34
     Create An New Project  project${d}   
-    Push Image  ${ip}  tester${d}  Test1@34  project${d}  vmware/photon:1.0
+    Push Image  ${ip}  user026  Test1@34  project${d}  vmware/photon:1.0
     Go Into Project  project${d}
     Go Into Repo  project${d}/vmware/photon
     Scan Repo  1.0  Fail
