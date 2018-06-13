@@ -121,7 +121,7 @@ Test Case - Push Image
     Sign In Harbor  ${HARBOR_URL}  ${HARBOR_ADMIN}  ${HARBOR_PASSWORD}
     Create An New Project  test${d}
 
-    Push image  ${ip}  ${HARBOR_URL}  ${HARBOR_ADMIN}  test${d}  hello-world:latest
+    Push image  ${ip}  ${HARBOR_URL}  ${HARBOR_ADMIN}  ${HARBOR_PASSWORD}  test${d}  hello-world:latest
     Go Into Project  test${d}
     Wait Until Page Contains  test${d}/hello-world
 

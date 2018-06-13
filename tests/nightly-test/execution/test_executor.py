@@ -42,6 +42,11 @@ class Executor():
         exe_result = p.returncode
         return exe_result
 
+    def __prepare(self):
+        self.get_ca()
+        if self.auth_mode == 'db_auth':
+            os.system(os.getcwd() + '/tests/nightly-test/shellscript/prepare.sh')
+
     def execute(self):
         cmd = ''
         
@@ -55,5 +60,5 @@ class Executor():
         cmd = cmd + self.get_ts(self.auth_mode) + " "
         cmd = cmd + self.get_ts("teardown") + " "
 
-        self.get_ca()
+        self.__prepare()
         return self.__execute_test(cmd)
