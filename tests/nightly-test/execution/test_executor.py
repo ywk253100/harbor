@@ -45,7 +45,7 @@ class Executor():
     def execute(self):
         cmd = ''
         
-        cmd_base = "docker run -i --privileged -v %s:/drone -v /harbor/ca:/ca -w /drone %s " % (os.getcwd(), self.e2e_engine)
+        cmd_base = "docker run -i --privileged -v %s:/drone -w /drone %s " % (os.getcwd(), self.e2e_engine)
         cmd_pybot = "pybot -v ip:%s -v ip1: -v HARBOR_PASSWORD:%s " % (self.harbor_endpoints, self.harbor_pwd)
         cmd = cmd_base + cmd_pybot
         
@@ -55,4 +55,5 @@ class Executor():
         cmd = cmd + self.get_ts(self.auth_mode) + " "
         cmd = cmd + self.get_ts("teardown") + " "
 
+        self.get_ca()
         return self.__execute_test(cmd)

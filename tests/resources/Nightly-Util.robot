@@ -31,7 +31,7 @@ Nightly Test Setup
 
 CA Setup
     [Arguments]  ${ip}  ${HARBOR_PASSWORD}
-    Run  mv /ca/ca.crt harbor_ca.crt
+    Run  mv /harbor/ca/ca.crt harbor_ca.crt
     Generate Certificate Authority For Chrome  ${HARBOR_PASSWORD}	
 
 Collect Nightly Logs
