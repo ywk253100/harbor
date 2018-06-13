@@ -43,9 +43,9 @@ class Executor():
         return exe_result
 
     def __prepare(self):
-        self.get_ca()
         if self.auth_mode == 'db_auth':
-            os.system(os.getcwd() + '/tests/nightly-test/shellscript/prepare.sh')
+            os.system(os.getcwd() + '/tests/nightly-test/shellscript/prepare.sh %s' % self.harbor_endpoints)
+        self.get_ca()
 
     def execute(self):
         cmd = ''
