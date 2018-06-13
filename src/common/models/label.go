@@ -33,6 +33,7 @@ type Label struct {
 	ProjectID    int64     `orm:"column(project_id)" json:"project_id"`
 	CreationTime time.Time `orm:"column(creation_time)" json:"creation_time"`
 	UpdateTime   time.Time `orm:"column(update_time)" json:"update_time"`
+	Deleted      bool      `orm:"column(deleted)" json:"deleted"`
 }
 
 // TableName ...
@@ -42,10 +43,11 @@ func (l *Label) TableName() string {
 
 // LabelQuery : query parameters for labels
 type LabelQuery struct {
-	Name      string
-	Level     string
-	Scope     string
-	ProjectID int64
+	Name           string
+	FuzzyMatchName bool // the property is used to determine the query for lable name is fuzzy matching or exaxt matching
+	Level          string
+	Scope          string
+	ProjectID      int64
 	Pagination
 }
 

@@ -57,7 +57,7 @@ func (l *LabelAPI) Prepare() {
 			return
 		}
 
-		if label == nil {
+		if label == nil || label.Deleted {
 			l.HandleNotFound(fmt.Sprintf("label %d not found", id))
 			return
 		}
@@ -139,7 +139,7 @@ func (l *LabelAPI) Get() {
 		return
 	}
 
-	if label == nil {
+	if label == nil || label.Deleted {
 		l.HandleNotFound(fmt.Sprintf("label %d not found", id))
 		return
 	}
@@ -162,8 +162,9 @@ func (l *LabelAPI) Get() {
 // List labels according to the query strings
 func (l *LabelAPI) List() {
 	query := &models.LabelQuery{
-		Name:  l.GetString("name"),
-		Level: common.LabelLevelUser,
+		Name:           l.GetString("name"),
+		FuzzyMatchName: true,
+		Level:          common.LabelLevelUser,
 	}
 
 	scope := l.GetString("scope")

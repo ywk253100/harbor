@@ -69,7 +69,10 @@
         "FULL_NAME": "Prénom et nom",
         "COMMENT": "Commentaires",
         "PASSWORD": "Mot de passe",
-        "SAVE_SUCCESS": "Profil utilisateur sauvegardé avec succès."
+        "SAVE_SUCCESS": "Profil utilisateur sauvegardé avec succès.",
+        "ADMIN_RENAME_TIP": "Select the button in order to change the username to \"admin@harbor.local\". This operation can not be undone.",
+        "RENAME_SUCCESS": "Rename success!",
+        "RENAME_CONFIRM_INFO": "Warning, changing the name to admin@harbor.local can not be undone."
     },
     "CHANGE_PWD": {
         "TITLE": "Modifier le mot de passe",
@@ -118,7 +121,9 @@
         "DELETION_SUMMARY": "Voules-vous supprimer l'utilisateur {{param}}?",
         "DELETE_SUCCESS": "Utilisateur supprimé avec succès.",
         "ITEMS": "items",
-        "OF": "de"
+        "OF": "de",
+        "RESET_Ok": "Users password reset successfully",
+        "EXISTING_PASSWORD": "The new password can not be same with the old one"
     },
     "PROJECT": {
         "PROJECTS": "Projets",
@@ -315,7 +320,8 @@
         "REPLICATE": "Replicate",
         "DELETE_REMOTE_IMAGES":"Delete remote images when locally deleted",
         "REPLICATE_IMMEDIATE":"Replicate existing images immediately",
-        "NEW": "New"
+        "NEW": "New",
+        "NAME_TOOLTIP": "replication rule name should be at least 2 characters long with lower case characters, numbers and ._- and must be start with characters or numbers."
     },
     "DESTINATION": {
         "NEW_ENDPOINT": "Nouveau Point Final",

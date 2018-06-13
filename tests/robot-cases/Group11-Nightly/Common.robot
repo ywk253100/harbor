@@ -49,7 +49,7 @@ Test Case - Delete A Project
     Init Chrome Driver
     ${d}=    Get Current Date    result_format=%m%s
     Sign In Harbor  ${HARBOR_URL}  ${HARBOR_ADMIN}  ${HARBOR_PASSWORD}
-    Create An New Project  test${d}
+    Create An New Project  project${d}
     Push Image  ${ip}  ${HARBOR_ADMIN}  ${HARBOR_PASSWORD}  project${d}  hello-world
     Project Should Not Be Deleted  project${d}
     Go Into Project  project${d}
@@ -62,7 +62,7 @@ Test Case - Read Only Mode
     Init Chrome Driver
     ${d}=   Get Current Date    result_format=%m%s
     Sign In Harbor  ${HARBOR_URL}  ${HARBOR_ADMIN}  ${HARBOR_PASSWORD}
-    Create An New Project  test${d}
+    Create An New Project  project${d}
 
     Enable Read Only
     Cannot Push image  ${ip}  ${HARBOR_ADMIN}  ${HARBOR_PASSWORD}  project${d}  busybox:latest
@@ -392,7 +392,7 @@ Test Case - Delete Multi Project
     Sign In Harbor  ${HARBOR_URL}  user012  Test1@34
     Create An New Project  projecta${d}
     Create An New Project  projectb${d}
-    Push Image  ${ip}  test${d}  Test1@34  projecta${d}  hello-world
+    Push Image  ${ip}  user012  Test1@34  projecta${d}  hello-world
     Filter Object  project
     Multi-delete Object  projecta  projectb
     # Verify delete project with image should not be deleted directly
@@ -436,8 +436,8 @@ Test Case - Delete Repo on CardView
     ${d}=   Get Current Date  result_format=%m%s
     Sign In Harbor  ${HARBOR_URL}  user015  Test1@34
     Create An New Project  project${d}
-    Push Image  ${ip}  test${d}  Test1@34  project${d}  hello-world
-    Push Image  ${ip}  test${d}  Test1@34  project${d}  busybox
+    Push Image  ${ip}  user015  Test1@34  project${d}  hello-world
+    Push Image  ${ip}  user015  Test1@34  project${d}  busybox
     Sleep  2
     Go Into Project  project${d}
     Switch To CardView

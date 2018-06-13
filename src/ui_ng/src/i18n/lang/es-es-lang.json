@@ -83,9 +83,9 @@
         "COMMENT": "Comentarios",
         "PASSWORD": "Contraseña",
         "SAVE_SUCCESS": "Perfil de usuario guardado satisfactoriamente.",
-        "ADMIN_RENAME_TIP": "Double click to change your username to \"admin@harbor.local\", but this action can NOT redo.",
+        "ADMIN_RENAME_TIP": "Select the button in order to change the username to \"admin@harbor.local\". This operation can not be undone.",
         "RENAME_SUCCESS": "Rename success!",
-        "RENAME_CONFIRM_INFO": "This action can not undo, Confirm To Rename?"
+        "RENAME_CONFIRM_INFO": "Warning, changing the name to admin@harbor.local can not be undone."
     },
     "CHANGE_PWD": {
         "TITLE": "Cambiar contraseña",
@@ -135,7 +135,9 @@
         "DELETION_SUMMARY": "¿Quiere eliminar el usuario {{param}}?",
         "DELETE_SUCCESS": "Usuario eliminado satisfactoriamente.",
         "ITEMS": "elementos",
-        "OF": "of"
+        "OF": "of",
+        "RESET_Ok": "Users password reset successfully",
+        "EXISTING_PASSWORD": "The new password can not be same with the old one"
     },
     "PROJECT": {
         "PROJECTS": "Proyectos",
@@ -340,7 +342,8 @@
         "REPLICATE": "Replicate",
         "DELETE_REMOTE_IMAGES":"Delete remote images when locally deleted",
         "REPLICATE_IMMEDIATE":"Replicate existing images immediately",
-        "NEW": "New"
+        "NEW": "New",
+        "NAME_TOOLTIP": "replication rule name should be at least 2 characters long with lower case characters, numbers and ._- and must be start with characters or numbers."
     },
     "DESTINATION": {
         "NEW_ENDPOINT": "Nuevo Endpoint",
