@@ -2,7 +2,7 @@
 
 set -e
 
-function create_user {
+create_user() {
     curl -u admin:Harbor12345 -k -X POST --header 'Content-Type: application/json' --header 'Accept: text/plain' -d '{
         "username": "'$1'",
         "email": "'$1@vmware.com'",
@@ -11,40 +11,6 @@ function create_user {
         "comment": "user comment for testing"
         }' 'https://'$2'/api/users'
 }
-
-
- "users": []
- "Registries": []
- "Replications": []
- "Configurations": []
-
-
- "projects":[
-                {
-                    "name": "project1",
-                    "accesslevel": "public", 
-                    "repositories": [
-                        {"name": "latest", "size": "0.92", "signed": "true" ...},
-                        {"name": "latest", "size": "0.92", "signed": "true" ...},
-                        ......
-                    ], 
-                    "members": [
-                          {"name": "admin", "role": "Project Admin"},
-                          {"name": "test1", "role": "Developer"},
-                    ], 
-                    "replications": "", 
-                    "Labels":"", 
-                    "Logs":"", 
-                    "Configuration": {
-                        "public":"true",
-                        "contenttrust","enable",
-                        ....
-                    }
-                }
-            ]
-
-
-
 
 create_user user001 $1
 create_user user002 $1
