@@ -18,9 +18,10 @@ get_installer() {
         target_url=$1
     fi
     curl -O $target_url
-    mv ./harbor-offline-installer-latest.tgz $installer_dir
+    harbor_build_bundle=$(basename ./harbor-offline-installer-*.tgz)
+    mv ./$harbor_build_bundle $installer_dir
     cd $installer_dir
-    tar -zvxf ./harbor-offline-installer-latest.tgz
+    tar -zvxf ./$harbor_build_bundle
     cd $CUR
 }
 

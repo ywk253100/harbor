@@ -48,7 +48,8 @@ def main():
             harbor_endpoint = offline_deployer.deploy()
             print harbor_endpoint 
         else:
-            print "Unsupported installer type."        
+            print "Unsupported installer type."
+            sys.exit(1)    
 
     except Exception, e:
         print e
