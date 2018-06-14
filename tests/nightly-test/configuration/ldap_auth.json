@@ -5,7 +5,7 @@
     "ldap_url": "ldap://10.161.127.236",
     "ldap_searchdn": "cn=admin,dc=example,dc=com",
     "ldap_search_pwd": "admin",
-    "ldap_filter": "(&(objectclass=inetorgperson)(memberof=cn=harbor_users,ou=groups,dc=example,dc=com))",
+    "ldap_filter": "",
     "ldap_basedn": "dc=example,dc=com",
     "ldap_uid": "cn",
     "ldap_scope": "2",
