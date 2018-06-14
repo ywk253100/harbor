@@ -502,6 +502,7 @@ Test Case - Developer Operate Labels
 
     Sign In Harbor  ${HARBOR_URL}  user021  Test1@34
     Create An New Project  project${d}
+    Logout Harbor
     
     Manage Project Member  user021  Test1@34  project${d}  user022  Add
     Change User Role In Project  user021  Test1@34  project${d}  user022  Developer
