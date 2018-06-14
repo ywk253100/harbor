@@ -288,7 +288,7 @@ Test Case - Manage Project Member
     Init Chrome Driver
     ${d}=    Get current Date  result_format=%m%s
  
-    Sign In Harbor  ${HARBOR_URL}  user003  Test1@34
+    Sign In Harbor  ${HARBOR_URL}  user004  Test1@34
     Create An New Project  project${d}
     Push image  ip=${ip}  user=user004  pwd=Test1@34  project=project${d}  image=hello-world
     Logout Harbor
@@ -500,7 +500,7 @@ Test Case - Developer Operate Labels
     Init Chrome Driver
     ${d}=   Get Current Date    result_format=%m%s
 
-    Sign In Harbor  ${HARBOR_URL}  user022  Test1@34
+    Sign In Harbor  ${HARBOR_URL}  user021  Test1@34
     Create An New Project  project${d}
     
     Manage Project Member  user021  Test1@34  project${d}  user022  Add
@@ -518,7 +518,7 @@ Test Case - Scan A Tag In The Repo
 
     Sign In Harbor  ${HARBOR_URL}  user023  Test1@34
     Create An New Project  project${d}
-    
+
     Go Into Project  project${d}    
     Push Image  ${ip}  user023  Test1@34  project${d}  hello-world
     Go Into Project  project${d}
