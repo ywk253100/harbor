@@ -32,8 +32,7 @@ def main():
     
     try:
         tc_executor = Executor(commandline_input.endpoint)
-        rc = tc_executor.execute()
-        sys.exit(rc)
+        tc_executor.execute()
 
     except Exception, e:
         print e

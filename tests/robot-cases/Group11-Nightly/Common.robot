@@ -294,13 +294,13 @@ Test Case - Manage Project Member
     Logout Harbor
 
     User Should Not Be A Member Of Project  user005  Test1@34  project${d}
-    Manage Project Member  alice${d}  Test1@34  project${d}  user005  Add
+    Manage Project Member  user004  Test1@34  project${d}  user005  Add
     User Should Be Guest  user005  Test1@34  project${d}
-    Change User Role In Project  alice${d}  Test1@34  project${d}  user005  Developer
+    Change User Role In Project  user004  Test1@34  project${d}  user005  Developer
     User Should Be Developer  user005  Test1@34  project${d}
-    Change User Role In Project  alice${d}  Test1@34  project${d}  user005  Admin
+    Change User Role In Project  user004  Test1@34  project${d}  user005  Admin
     User Should Be Admin  user005  Test1@34  project${d}  user006
-    Manage Project Member  alice${d}  Test1@34  project${d}  user005  Remove
+    Manage Project Member  user004  Test1@34  project${d}  user005  Remove
     User Should Not Be A Member Of Project  user005  Test1@34  project${d}
     User Should Be Guest  user006  Test1@34  project${d}
 
@@ -377,7 +377,7 @@ Test Case - Edit Repo Info
     ${d}=  Get Current Date  result_format=%m%s
     
     Sign In Harbor  ${HARBOR_URL}  user011  Test1@34
-    Create An New Project  projectb${d}
+    Create An New Project  project${d}
     Push Image  ${ip}  user011  Test1@34  project${d}  hello-world
     Go Into Project  project${d}
     Go Into Repo  project${d}/hello-world
@@ -501,6 +501,8 @@ Test Case - Developer Operate Labels
     ${d}=   Get Current Date    result_format=%m%s
 
     Sign In Harbor  ${HARBOR_URL}  user022  Test1@34
+    Create An New Project  project${d}
+    
     Manage Project Member  user021  Test1@34  project${d}  user022  Add
     Change User Role In Project  user021  Test1@34  project${d}  user022  Developer
 
@@ -515,6 +517,8 @@ Test Case - Scan A Tag In The Repo
     ${d}=  get current date  result_format=%m%s
 
     Sign In Harbor  ${HARBOR_URL}  user023  Test1@34
+    Create An New Project  project${d}
+    
     Go Into Project  project${d}    
     Push Image  ${ip}  user023  Test1@34  project${d}  hello-world
     Go Into Project  project${d}

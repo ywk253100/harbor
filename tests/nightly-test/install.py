@@ -41,7 +41,7 @@ def main():
             ova_deployer = OVADeployer(commandline_input.auth_mode, commandline_input.url)
             logger.info("Going to deploy harbor ova..")
             harbor_endpoint, vm_name = ova_deployer.deploy()
-            print harbor_endpoint + " " + vm_name 
+            print harbor_endpoint
         elif commandline_input.installer_type == 'offline':
             offline_deployer = OfflineDeployer(commandline_input.auth_mode, commandline_input.url)
             logger.info("Going to deploy harbor offline..")
