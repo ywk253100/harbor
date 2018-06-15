@@ -13,18 +13,21 @@ import argparse
 class Parameters(object):
     def __init__(self):
         self.endpoint = ''
+        # only for replication
+        self.endpoint1 = ''
         self.init_from_input()
 
     @staticmethod
     def parse_input():
         parser = argparse.ArgumentParser(description='run testcase') 
         parser.add_argument('--endpoint', '-e', dest='endpoint', required=True, help='The endpoint of harbor.')
+        parser.add_argument('--endpoint1', '-e', dest='endpoint1', required=False, help='The endpoint of harbor.')
 
         args = parser.parse_args()
         return (args.endpoint)
 
     def init_from_input(self):
-        (self.endpoint) = Parameters.parse_input()
+        (self.endpoint, self.endpoint1) = Parameters.parse_input()
 
 
 def main():
