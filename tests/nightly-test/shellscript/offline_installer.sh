@@ -55,6 +55,8 @@ init() {
     rm -rf ./*
     cd /var/log/harbor
     rm -rf ./*
+    cd /harbor/ca
+    rm -rf ./*
     cd $CUR
 }
 
