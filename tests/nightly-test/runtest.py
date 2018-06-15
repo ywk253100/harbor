@@ -21,7 +21,7 @@ class Parameters(object):
     def parse_input():
         parser = argparse.ArgumentParser(description='run testcase') 
         parser.add_argument('--endpoint', '-e', dest='endpoint', required=True, help='The endpoint of harbor.')
-        parser.add_argument('--endpoint1', '-e', dest='endpoint1', required=False, help='The endpoint of harbor.')
+        parser.add_argument('--endpoint1', '-e1', dest='endpoint1', required=False, help='The endpoint of harbor.')
 
         args = parser.parse_args()
         return (args.endpoint)
