@@ -24,9 +24,6 @@ class Executor():
     def get_ts(self, auth_mode):
         with open(os.getcwd() + '/tests/nightly-test/execution/tc.json') as ts_config:
             ts_data = json.load(ts_config)
-        
-        if self.harbor_endpoint1 != '':
-            return ts_data['replication']
         return ts_data[auth_mode]
 
     def get_ca(self):
