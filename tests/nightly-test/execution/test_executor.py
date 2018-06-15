@@ -62,8 +62,11 @@ class Executor():
         
         # any test execution will be setup + common + auth_mode specific + teardown.
         cmd = cmd + self.get_ts("setup") + " "
-        cmd = cmd + self.get_ts("common") + " "       
-        cmd = cmd + self.get_ts(self.auth_mode) + " "
+        cmd = cmd + self.get_ts("common") + " "
+        if self.harbor_endpoint1 != '':    
+            cmd = cmd + self.get_ts('replication') + " "
+        else:
+            cmd = cmd + self.get_ts(self.auth_mode) + " "
         cmd = cmd + self.get_ts("teardown") + " "
 
         self.__prepare()
