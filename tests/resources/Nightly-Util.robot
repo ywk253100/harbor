@@ -28,7 +28,7 @@ Nightly Test Setup
     Run Keyword  Start Docker Daemon Locally
 
 CA Setup
-    [Arguments]  ${ip}  ${HARBOR_PASSWORD}  ${cert}==/ca/ca.crt
+    [Arguments]  ${ip}  ${HARBOR_PASSWORD}  ${cert}=/ca/ca.crt
     Run  mv ${cert} harbor_ca.crt
     Generate Certificate Authority For Chrome  ${HARBOR_PASSWORD}
     Prepare Docker Cert  ${ip}	
