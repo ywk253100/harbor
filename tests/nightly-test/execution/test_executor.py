@@ -29,7 +29,7 @@ class Executor():
     def get_ca(self):
         harbor_util.get_ca(self.harbor_endpoint, self.harbor_user, self.harbor_pwd)
         if self.harbor_endpoint1 != '':
-             harbor_util.get_ca(self.harbor_endpoint, self.harbor_user, self.harbor_pwd, '/harbor/ca/ca1.crt')
+             harbor_util.get_ca(self.harbor_endpoint1, self.harbor_user, self.harbor_pwd, '/harbor/ca/ca1.crt')
     
     def __execute_test(self, cmd):
         logger.info(cmd)
