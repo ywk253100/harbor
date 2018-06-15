@@ -34,7 +34,7 @@ def main():
     commandline_input = Parameters()
     
     try:
-        tc_executor = Executor(commandline_input.endpoint)
+        tc_executor = Executor(commandline_input.endpoint, commandline_input.endpoint1)
         tc_executor.execute()
 
     except Exception, e:
