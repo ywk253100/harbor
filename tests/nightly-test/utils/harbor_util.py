@@ -55,12 +55,6 @@ def get_harbor_version(harbor_endpoint, harbor_user, harbor_pwd):
 def get_auth_mode(harbor_endpoint, harbor_user, harbor_pwd):
    return request(harbor_endpoint, '/systeminfo', 'get', harbor_user, harbor_pwd)['auth_mode']
 
-def get_ca(harbor_endpoint, harbor_user, harbor_pwd):
+def get_ca(harbor_endpoint, harbor_user, harbor_pwd, target='/harbor/ca/ca.crt'):
    ca_contend = request(harbor_endpoint, '/systeminfo/getcert', 'get', harbor_user, harbor_pwd)
-   open("/harbor/ca/ca.crt", 'wb').write(ca_contend)
-
-def main():
-    print get_ca('10.193.22.115', 'admin', 'Harbor12345')
-
-if __name__ == '__main__':
-    main()
+   open(target, 'wb').write(ca_contend)

@@ -13,20 +13,26 @@ logger = nlogging.create_logger(__name__)
 
 class Executor(): 
 
-    def __init__(self, harbor_endpoints, harbor_pwd='Harbor12345'):
-        self.harbor_endpoints = harbor_endpoints
+    def __init__(self, harbor_endpoint, harbor_endpoint1='', harbor_pwd='Harbor12345'):
+        self.harbor_endpoint = harbor_endpoint
+        self.harbor_endpoint1 = harbor_endpoint1
         self.harbor_user = "admin"
         self.harbor_pwd = harbor_pwd
-        self.auth_mode = harbor_util.get_auth_mode(self.harbor_endpoints, self.harbor_user, self.harbor_pwd)
+        self.auth_mode = harbor_util.get_auth_mode(self.harbor_endpoint, self.harbor_user, self.harbor_pwd)
         self.e2e_engine = "vmware/harbor-e2e-engine:1.38"        
 
     def get_ts(self, auth_mode):
         with open(os.getcwd() + '/tests/nightly-test/execution/tc.json') as ts_config:
             ts_data = json.load(ts_config)
+        
+        if self.harbor_endpoint1 != '':
+            return ts_data['replication']
         return ts_data[auth_mode]
 
     def get_ca(self):
-        harbor_util.get_ca(self.harbor_endpoints, self.harbor_user, self.harbor_pwd)
+        harbor_util.get_ca(self.harbor_endpoint, self.harbor_user, self.harbor_pwd)
+        if self.harbor_endpoint1 != '':
+             harbor_util.get_ca(self.harbor_endpoint, self.harbor_user, self.harbor_pwd, '/harbor/ca/ca1.crt')
     
     def __execute_test(self, cmd):
         logger.info(cmd)
@@ -44,14 +50,14 @@ class Executor():
 
     def __prepare(self):
         if self.auth_mode == 'db_auth':
-            os.system(os.getcwd() + '/tests/nightly-test/shellscript/prepare.sh %s' % self.harbor_endpoints)
+            os.system(os.getcwd() + '/tests/nightly-test/shellscript/prepare.sh %s' % self.harbor_endpoint)
         self.get_ca()
 
     def execute(self):
         cmd = ''
         
         cmd_base = "docker run -i --privileged -v %s:/drone -v /harbor/ca:/ca -w /drone %s " % (os.getcwd(), self.e2e_engine)
-        cmd_pybot = "pybot -v ip:%s -v ip1: -v HARBOR_PASSWORD:%s " % (self.harbor_endpoints, self.harbor_pwd)
+        cmd_pybot = "pybot -v ip:%s -v ip1:%s -v HARBOR_PASSWORD:%s " % (self.harbor_endpoint, self.harbor_endpoint1, self.harbor_pwd)
         cmd = cmd_base + cmd_pybot
         
         # any test execution will be setup + common + auth_mode specific + teardown.

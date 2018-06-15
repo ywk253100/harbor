@@ -23,15 +23,14 @@ ${SSH_USER}  root
 Nightly Test Setup
     [Arguments]  ${ip}  ${HARBOR_PASSWORD}  ${ip1}==${EMPTY}
     Run Keyword  CA setup  ${ip}  ${HARBOR_PASSWORD}
-    Run Keyword  Prepare Docker Cert  ${ip}    
-    Run Keyword If  '${ip1}' != '${EMPTY}'  Run  rm harbor_ca.crt 
-    Run Keyword If  '${ip1}' != '${EMPTY}'  CA setup  ${ip1}  ${HARBOR_PASSWORD}
+    Run Keyword  Prepare Docker Cert  ${ip}
+    Run Keyword If  '${ip1}' != '${EMPTY}'  CA setup  ${ip1}  ${HARBOR_PASSWORD}  /ca/ca1.crt
     Run Keyword If  '${ip1}' != '${EMPTY}'  Prepare Docker Cert  ${ip1}
     Run Keyword  Start Docker Daemon Locally
 
 CA Setup
-    [Arguments]  ${ip}  ${HARBOR_PASSWORD}
-    Run  mv /ca/ca.crt harbor_ca.crt
+    [Arguments]  ${ip}  ${HARBOR_PASSWORD}  ${cert}==/ca/ca.crt
+    Run  mv ${cert} harbor_ca.crt
     Generate Certificate Authority For Chrome  ${HARBOR_PASSWORD}	
 
 Collect Nightly Logs
