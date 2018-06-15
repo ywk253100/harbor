@@ -15,15 +15,8 @@
 *** Settings ***
 Documentation  Harbor BATs
 Resource  ../../resources/Util.robot
-Suite Setup  Nightly Test Setup  ${ip}  ${SSH_PWD}  ${HARBOR_PASSWORD}  ${ip1}
-Suite Teardown  Collect Nightly Logs  ${ip}  ${SSH_PWD}  ${ip1}
 Default Tags  Nightly
-
-*** Variables ***
-${HARBOR_URL}  https://${ip}
-${SSH_USER}  root
-${HARBOR_ADMIN}  admin
 
 *** Test Cases ***
 Test Suites Teardown
-    Collect Nightly Logs  ${ip}  ${SSH_PWD}  ${ip1}
+    Log To Console  Teardown do nothing here.

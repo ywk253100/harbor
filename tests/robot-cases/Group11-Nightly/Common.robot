@@ -37,6 +37,19 @@ Test Case - Vulnerability Data Not Ready
     Switch To Configure
     Go To Vulnerability Config
     Vulnerability Not Ready Config Hint
+
+Test Case - Project Level Image Serverity Policy
+    Init Chrome Driver
+    Push Image  ${ip}  ${HARBOR_ADMIN}  ${HARBOR_PASSWORD}  library  haproxy
+    Sign In Harbor  ${HARBOR_URL}  ${HARBOR_ADMIN}  ${HARBOR_PASSWORD}
+    Go Into Project  library
+    Go Into Repo  haproxy
+    Scan Repo  latest  Succeed
+    Back To Projects
+    Go Into Project  library
+    Set Vulnerabilty Serverity  0
+    Cannot pull image  ${ip}  ${HARBOR_ADMIN}  ${HARBOR_PASSWORD}  library  haproxy
+    Close Browser
     
 Test Case - Create An New Project
     Init Chrome Driver
@@ -159,19 +172,6 @@ Test Case - Project Level Policy Content Trust
     Cannot Pull Unsigned Image  ${ip}  ${HARBOR_ADMIN}  ${HARBOR_PASSWORD}  project${d}  hello-world:latest
     Close Browser
 
-Test Case - Project Level Image Serverity Policy
-    Init Chrome Driver
-    Push Image  ${ip}  ${HARBOR_ADMIN}  ${HARBOR_PASSWORD}  library  haproxy
-    Sign In Harbor  ${HARBOR_URL}  ${HARBOR_ADMIN}  ${HARBOR_PASSWORD}
-    Go Into Project  library
-    Go Into Repo  haproxy
-    Scan Repo  latest  Succeed
-    Back To Projects
-    Go Into Project  library
-    Set Vulnerabilty Serverity  0
-    Cannot pull image  ${ip}  ${HARBOR_ADMIN}  ${HARBOR_PASSWORD}  library  haproxy
-    Close Browser
-
 Test Case - Verify Download Ca Link
     Init Chrome Driver
     Sign In Harbor  ${HARBOR_URL}  ${HARBOR_ADMIN}  ${HARBOR_PASSWORD}
@@ -283,6 +283,7 @@ Test Case - User View Logs
 
     Do Log Advanced Search
     Close Browser
+
 
 Test Case - Manage Project Member
     Init Chrome Driver
