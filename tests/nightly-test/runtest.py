@@ -24,7 +24,7 @@ class Parameters(object):
         parser.add_argument('--endpoint1', '-e1', dest='endpoint1', required=False, help='The endpoint of harbor.')
 
         args = parser.parse_args()
-        return (args.endpoint)
+        return (args.endpoint, args.endpoint1)
 
     def init_from_input(self):
         (self.endpoint, self.endpoint1) = Parameters.parse_input()
