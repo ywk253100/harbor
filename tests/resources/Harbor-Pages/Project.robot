@@ -32,7 +32,7 @@ Create An New Project
     Click Element  xpath=//button[contains(.,'OK')]
     Sleep  4
     ${rc}  ${output}=  Run And Return Rc And Output  curl -u ${HARBOR_ADMIN}:${HARBOR_PASSWORD} -k -X GET --header 'Accept: application/json' ${HARBOR_URL}/api/projects?name=${projectname}
-    Log To Console  ${output}
+    Log  ${output}
     Should Be Equal As Integers  ${rc}  0
     Should Contain  ${output}  ${projectname}
 
