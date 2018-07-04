@@ -108,4 +108,4 @@ Test Case - Ldap User Push An Image
     Close Browser
 
 Test Case - Ldap User Can Not login
-    Docker Login Fail  ${ip}  test  123456
+    Docker Login Fail  ${ip}  testerDeesExist  123456
