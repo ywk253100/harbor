@@ -57,7 +57,7 @@ Test Case - Delete Multi User
     Sign In Harbor  ${HARBOR_URL}  admin  Harbor12345
     Switch To User Tag
     Filter Object  delete
-    Multi-delete Object  deletea  deleteb  deletec
+    Multi-delete User  deletea  deleteb  deletec
     # Assert delete
     Delete Success  deletea  deleteb  deletec
     Sleep  1

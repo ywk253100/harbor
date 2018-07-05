@@ -331,6 +331,8 @@ Test Case - Manage project publicity
 Test Case - Assign Sys Admin
     Init Chrome Driver
     ${d}=    Get Current Date    result_format=%m%s
+    Sign In Harbor  ${HARBOR_URL}  user009  Test1@34
+    Logout Harbor
     Sign In Harbor  ${HARBOR_URL}  ${HARBOR_ADMIN}  ${HARBOR_PASSWORD}
     Switch to User Tag
     Assign User Admin  user009
@@ -440,8 +442,8 @@ Test Case - Delete Multi Member
     Create An New Project  project${d}
     Go Into Project  project${d}
     Switch To Member
-    Add Guest Member to project  user017
-    Add Guest Member to project  user018
+    Add Guest Member To Project  user017
+    Add Guest Member To Project  user018
     Multi-delete Member  user017  user018
     Delete Success  user017  user018
     Close Browser
