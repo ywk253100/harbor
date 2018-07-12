@@ -13,8 +13,9 @@ logger = nlogging.create_logger(__name__)
 
 class Executor(): 
 
-    def __init__(self, harbor_endpoint, harbor_endpoint1='', harbor_pwd='Harbor12345'):
+    def __init__(self, harbor_endpoint, notary_server_endpoint, harbor_endpoint1='', harbor_pwd='Harbor12345'):
         self.harbor_endpoint = harbor_endpoint
+        self.notary_server_endpoint = notary_server_endpoint
         self.harbor_endpoint1 = harbor_endpoint1
         self.harbor_user = "admin"
         self.harbor_pwd = harbor_pwd
@@ -54,7 +55,7 @@ class Executor():
         cmd = ''
         
         cmd_base = "docker run -i --privileged -v %s:/drone -v /harbor/ca:/ca -w /drone %s " % (os.getcwd(), self.e2e_engine)
-        cmd_pybot = "pybot -v ip:%s -v ip1:%s -v HARBOR_PASSWORD:%s " % (self.harbor_endpoint, self.harbor_endpoint1, self.harbor_pwd)
+        cmd_pybot = "pybot -v ip:%s -v notaryServerEndpoint:%s -v ip1:%s -v HARBOR_PASSWORD:%s " % (self.harbor_endpoint, self.notary_server_endpoint, self.harbor_endpoint1, self.harbor_pwd)
         cmd = cmd_base + cmd_pybot
         
         # any test execution will be setup + common + auth_mode specific + teardown.

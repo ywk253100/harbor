@@ -13,6 +13,7 @@ import argparse
 class Parameters(object):
     def __init__(self):
         self.endpoint = ''
+        self.notaryServerEndpoint = ''
         # only for replication
         self.endpoint1 = ''
         self.init_from_input()
@@ -21,20 +22,21 @@ class Parameters(object):
     def parse_input():
         parser = argparse.ArgumentParser(description='run testcase') 
         parser.add_argument('--endpoint', '-e', dest='endpoint', required=True, help='The endpoint of harbor.')
+        parser.add_argument('--notary-server-endpoint', '-nse', dest='notaryServerEndpoint', required=False, help='The endpoint of Notary server.')
         parser.add_argument('--endpoint1', '-e1', dest='endpoint1', required=False, help='The endpoint of harbor.')
 
         args = parser.parse_args()
-        return (args.endpoint, args.endpoint1)
+        return (args.endpoint, args.notaryServerEndpoint, args.endpoint1)
 
     def init_from_input(self):
-        (self.endpoint, self.endpoint1) = Parameters.parse_input()
+        (self.endpoint, self.notaryServerEndpoint, self.endpoint1) = Parameters.parse_input()
 
 
 def main():
     commandline_input = Parameters()
     
     try:
-        tc_executor = Executor(commandline_input.endpoint, commandline_input.endpoint1)
+        tc_executor = Executor(commandline_input.endpoint, commandline_input.notaryServerEndpoint, commandline_input.endpoint1)
         tc_executor.execute()
 
     except Exception, e:
