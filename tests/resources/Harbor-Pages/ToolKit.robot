@@ -57,6 +57,7 @@ Multi-delete Object
     Click Element  //clr-modal//button[contains(.,'DELETE')]
     Capture Page Screenshot  Multi-delete-projs03.png
     Sleep  3
+    Capture Page Screenshot  Multi-delete-projs04.png
 
 Multi-delete User
     [Arguments]    @{obj}
