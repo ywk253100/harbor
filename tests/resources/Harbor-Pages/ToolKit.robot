@@ -25,12 +25,14 @@ Delete Success
     :For  ${obj}  in  @{obj}
     \    Wait Until Page Contains Element  //clr-tab-content//div[contains(.,'${obj}')]/../div/clr-icon[@shape="success-standard"]
     Sleep  1
+    Capture Page Screenshot  Multi-delete-projs05.png
 
 Delete Fail
     [Arguments]  @{obj}
     :For  ${obj}  in  @{obj}
     \    Wait Until Page Contains Element  //clr-tab-content//div[contains(.,'${obj}')]/../div/clr-icon[@shape="error-standard"]
     Sleep  1
+    Capture Page Screenshot  Multi-delete-projs06.png
 
 Filter Object
 #Filter project repo user tag.
