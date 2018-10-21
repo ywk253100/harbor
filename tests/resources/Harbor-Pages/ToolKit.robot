@@ -49,10 +49,13 @@ Multi-delete Object
     [Arguments]    @{obj}
     :For  ${obj}  in  @{obj}
     \    Click Element  //clr-dg-row[contains(.,'${obj}')]//label
+    Capture Page Screenshot  Multi-delete-projs01.png
     Sleep  1
     Click Element  //button[contains(.,'Delete')]
+    Capture Page Screenshot  Multi-delete-projs02.png
     Sleep  2
     Click Element  //clr-modal//button[contains(.,'DELETE')]
+    Capture Page Screenshot  Multi-delete-projs03.png
     Sleep  3
 
 Multi-delete User
