@@ -129,10 +129,12 @@ func Register(name string, h AuthenticateHelper) {
 // Login authenticates user credentials based on setting.
 func Login(m models.AuthModel) (*models.User, error) {
 
+	log.Debug("entering config.AuthMode")
 	authMode, err := config.AuthMode()
 	if err != nil {
 		return nil, err
 	}
+	log.Debug("leaving config.AuthMode")
 	if authMode == "" || dao.IsSuperUser(m.Principal) {
 		authMode = common.DBAuth
 	}

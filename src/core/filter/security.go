@@ -203,10 +203,12 @@ func (b *basicAuthReqCtxModifier) Modify(ctx *beegoctx.Context) bool {
 	}
 
 	// standalone
+	log.Debug("entering auth.Login")
 	user, err := auth.Login(models.AuthModel{
 		Principal: username,
 		Password:  password,
 	})
+	log.Debug("leaving auth.Login")
 	if err != nil {
 		log.Errorf("failed to authenticate %s: %v", username, err)
 		return false

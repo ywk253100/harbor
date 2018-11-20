@@ -29,7 +29,7 @@ import (
 
 // GetUser ...
 func GetUser(query models.User) (*models.User, error) {
-
+	log.Debug("entering GetUser")
 	o := GetOrmer()
 
 	sql := `select user_id, username, password, email, realname, comment, reset_uuid, salt,
@@ -70,7 +70,7 @@ func GetUser(query models.User) (*models.User, error) {
 	if n > 1 {
 		return nil, fmt.Errorf("got more than one user when executing: %s param: %v", sql, queryParam)
 	}
-
+	log.Debug("leaving GetUser")
 	return &u[0], nil
 }
 
@@ -246,6 +246,7 @@ func OnBoardUser(u *models.User) error {
 
 // IsSuperUser checks if the user is super user(conventionally id == 1) of Harbor
 func IsSuperUser(username string) bool {
+	log.Debug("entering IsSuperUser")
 	u, err := GetUser(models.User{
 		Username: username,
 	})
@@ -254,6 +255,7 @@ func IsSuperUser(username string) bool {
 		log.Errorf("Failed to get user from DB, username: %s, error: %v", username, err)
 		return false
 	}
+	log.Debug("leaving IsSuperUser")
 	return u != nil && u.UserID == 1
 }
 
