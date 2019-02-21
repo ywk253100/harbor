@@ -95,12 +95,17 @@ func (c *Client) Head(url string) error {
 func (c *Client) Post(url string, v ...interface{}) error {
 	var reader io.Reader
 	if len(v) > 0 {
-		data, err := json.Marshal(v[0])
-		if err != nil {
-			return err
-		}
+		r, ok := v[0].(io.Reader)
+		if ok {
+			reader = r
+		} else {
+			data, err := json.Marshal(v[0])
+			if err != nil {
+				return err
+			}
 
-		reader = bytes.NewReader(data)
+			reader = bytes.NewReader(data)
+		}
 	}
 
 	req, err := http.NewRequest(http.MethodPost, url, reader)

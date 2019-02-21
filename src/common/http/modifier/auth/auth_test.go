@@ -35,3 +35,21 @@ func TestAuthorizeOfSecretAuthorizer(t *testing.T) {
 	require.Nil(t, authorizer.Modify(req))
 	assert.Equal(t, secret, commonsecret.FromRequest(req))
 }
+
+func TestAuthorizeOfBasicAuthorizer(t *testing.T) {
+	username := "username"
+	password := "password"
+	authorizer := NewBasicAuthorizer(username, password)
+
+	// nil request
+	require.NotNil(t, authorizer.Modify(nil))
+
+	// valid request
+	req, err := http.NewRequest("", "", nil)
+	require.Nil(t, err)
+	require.Nil(t, authorizer.Modify(req))
+	usr, pwd, ok := req.BasicAuth()
+	assert.True(t, ok)
+	assert.Equal(t, username, usr)
+	assert.Equal(t, password, pwd)
+}

@@ -45,3 +45,25 @@ func (s *SecretAuthorizer) Modify(req *http.Request) error {
 	err := secret.AddToRequest(req, s.secret)
 	return err
 }
+
+// Basic auth authorizer
+type basicAuthorizer struct {
+	username string
+	password string
+}
+
+// NewBasicAuthorizer return a Basic Auth Authorizer
+func NewBasicAuthorizer(username, password string) Authorizer {
+	return &basicAuthorizer{
+		username: username,
+		password: password,
+	}
+}
+
+func (b *basicAuthorizer) Modify(req *http.Request) error {
+	if req == nil {
+		return errors.New("the request is null")
+	}
+	req.SetBasicAuth(b.username, b.password)
+	return nil
+}
