@@ -55,7 +55,7 @@ type defaultController struct {
 	scheduler    scheduler.Scheduler
 }
 
-// Replicate according the to policy ID
+// Start the replication according the to the policy
 func (d *defaultController) StartReplication(policy *model.Policy) (int64, error) {
 	log.Infof("starting the replication based on the policy %d ...", policy.ID)
 
