@@ -677,11 +677,10 @@ func TestAddRegistry(t *testing.T) {
 		AccessKey:    "admin",
 		AccessSecret: "admin",
 	}
-	// _, err := AddRepTarget(target)
 	id, err := AddRegistry(registry)
-	t.Logf("added target, id: %d", id)
+	t.Logf("added registry, id: %d", id)
 	if err != nil {
-		t.Errorf("Error occurred in AddRepTarget: %v", err)
+		t.Errorf("Error occurred in AddRegistry: %v", err)
 	} else {
 		targetID = id
 	}
@@ -710,12 +709,12 @@ func TestAddRegistry(t *testing.T) {
 
 func TestGetRegistryByName(t *testing.T) {
 	r, err := GetRegistry(targetID)
-	if err != nil {
+	if err != nil || r == nil {
 		t.Fatalf("failed to get registry %d: %v", targetID, err)
 	}
 
 	r2, err := GetRegistryByName(r.Name)
-	if err != nil {
+	if err != nil || r2 == nil {
 		t.Fatalf("failed to get registry %s: %v", r.Name, err)
 	}
 
@@ -726,12 +725,12 @@ func TestGetRegistryByName(t *testing.T) {
 
 func TestGetRegistryByURL(t *testing.T) {
 	r, err := GetRegistry(targetID)
-	if err != nil {
+	if err != nil || r == nil {
 		t.Fatalf("failed to get registry %d: %v", targetID, err)
 	}
 
 	r2, err := GetRegistryByURL(r.URL)
-	if err != nil {
+	if err != nil || r2 == nil {
 		t.Fatalf("failed to get registry %s: %v", r.URL, err)
 	}
 
@@ -1063,16 +1062,16 @@ func TestDeleteRepJob(t *testing.T) {
 func TestDeleteRegistry(t *testing.T) {
 	err := DeleteRegistry(targetID)
 	if err != nil {
-		t.Errorf("Error occurred in DeleteRepTarget: %v, id: %d", err, targetID)
+		t.Errorf("Error occurred in DeleteRegistry: %v, id: %d", err, targetID)
 		return
 	}
-	t.Logf("deleted target, id: %d", targetID)
-	tgt, err := GetRegistry(targetID)
+	t.Logf("deleted registry, id: %d", targetID)
+	r, err := GetRegistry(targetID)
 	if err != nil {
-		t.Errorf("Error occurred in GetTarget: %v, id: %d", err, targetID)
+		t.Errorf("Error occurred in GetRegistry: %v, id: %d", err, targetID)
 	}
-	if tgt != nil {
-		t.Errorf("Able to find target after deletion, id: %d", targetID)
+	if r != nil {
+		t.Errorf("Able to find registry after deletion, id: %d", targetID)
 	}
 }
 

@@ -32,9 +32,9 @@ const (
 func TestReplicationAPIPost(t *testing.T) {
 	registryID, err := dao.AddRegistry(
 		&models.Registry{
-			Name:     "test_replication_target",
-			URL:      "127.0.0.1",
-			AccessKey: "username",
+			Name:         "test_replication_target",
+			URL:          "127.0.0.1",
+			AccessKey:    "username",
 			AccessSecret: "password",
 		})
 	require.Nil(t, err)

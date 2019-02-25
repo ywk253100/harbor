@@ -28,7 +28,7 @@ func AddRegistry(registry *models.Registry) (int64, error) {
 func GetRegistry(id int64) (*models.Registry, error) {
 	o := GetOrmer()
 	r := models.Registry{ID: id}
-	err := o.Read(&r)
+	err := o.Read(&r, "ID")
 	if err == orm.ErrNoRows {
 		return nil, nil
 	}
@@ -39,7 +39,7 @@ func GetRegistry(id int64) (*models.Registry, error) {
 func GetRegistryByName(name string) (*models.Registry, error) {
 	o := GetOrmer()
 	r := models.Registry{Name: name}
-	err := o.Read(&r)
+	err := o.Read(&r, "Name")
 	if err == orm.ErrNoRows {
 		return nil, nil
 	}
@@ -50,7 +50,7 @@ func GetRegistryByName(name string) (*models.Registry, error) {
 func GetRegistryByURL(url string) (*models.Registry, error) {
 	o := GetOrmer()
 	r := models.Registry{URL: url}
-	err := o.Read(&r)
+	err := o.Read(&r, "URL")
 	if err == orm.ErrNoRows {
 		return nil, nil
 	}

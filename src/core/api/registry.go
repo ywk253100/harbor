@@ -3,7 +3,6 @@ package api
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/goharbor/harbor/src/common/dao"
 	utilerr "github.com/goharbor/harbor/src/common/utils/error"
@@ -27,7 +26,7 @@ func (t *RegistryAPI) Prepare() {
 		return
 	}
 
-	if !t.SecurityCtx.IsSysAdmin() {
+	if !t.SecurityCtx.IsSysAdmin() && t.Ctx.Request.Method != "GET" {
 		t.HandleForbidden(t.SecurityCtx.GetUsername())
 		return
 	}
@@ -100,7 +99,9 @@ func (t *RegistryAPI) Post() {
 		t.CustomAbort(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 	}
 
-	t.Redirect(http.StatusCreated, strconv.FormatInt(id, 10))
+	registry.ID = id
+	t.Data["json"] = registry
+	t.ServeJSON()
 }
 
 // Put updates a registry
@@ -114,11 +115,12 @@ func (t *RegistryAPI) Put() {
 	}
 
 	req := struct {
-		Name     *string `json:"name"`
-		Endpoint *string `json:"endpoint"`
-		Username *string `json:"username"`
-		Password *string `json:"password"`
-		Insecure *bool   `json:"insecure"`
+		Name           *string `json:"name"`
+		URL            *string `json:"url"`
+		CredentialType *string `json:"credential_type"`
+		AccessKey      *string `json:"access_key"`
+		AccessSecret   *string `json:"access_secret"`
+		Insecure       *bool   `json:"insecure"`
 	}{}
 	t.DecodeJSONReq(&req)
 
@@ -127,14 +129,17 @@ func (t *RegistryAPI) Put() {
 	if req.Name != nil {
 		registry.Name = *req.Name
 	}
-	if req.Endpoint != nil {
-		registry.URL = *req.Endpoint
+	if req.URL != nil {
+		registry.URL = *req.URL
 	}
-	if req.Username != nil {
-		registry.Credential.AccessKey = *req.Username
+	if req.CredentialType != nil {
+		registry.Credential.Type = (model.CredentialType)(*req.CredentialType)
 	}
-	if req.Password != nil {
-		registry.Credential.AccessSecret = *req.Password
+	if req.AccessKey != nil {
+		registry.Credential.AccessKey = *req.AccessKey
+	}
+	if req.AccessSecret != nil {
+		registry.Credential.AccessSecret = *req.AccessSecret
 	}
 	if req.Insecure != nil {
 		registry.Insecure = *req.Insecure

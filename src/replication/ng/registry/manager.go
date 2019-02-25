@@ -51,8 +51,6 @@ type Manager interface {
 	Get(int64) (*model.Registry, error)
 	// GetByName gets registry by name
 	GetByName(name string) (*model.Registry, error)
-	// GetByURL gets registry by its URL
-	GetByURL(url string) (*model.Registry, error)
 	// Update the registry, the "props" are the properties of registry
 	// that need to be updated
 	Update(registry *model.Registry, props ...string) error
@@ -93,20 +91,6 @@ func (m *DefaultManager) Get(id int64) (*model.Registry, error) {
 // GetByName gets a registry by its name
 func (m *DefaultManager) GetByName(name string) (*model.Registry, error) {
 	registry, err := dao.GetRegistryByName(name)
-	if err != nil {
-		return nil, err
-	}
-
-	if registry == nil {
-		return nil, nil
-	}
-
-	return fromDaoModel(registry)
-}
-
-// GetByURL gets a registry by its URL
-func (m *DefaultManager) GetByURL(url string) (*model.Registry, error) {
-	registry, err := dao.GetRegistryByURL(url)
 	if err != nil {
 		return nil, err
 	}
