@@ -68,6 +68,7 @@ func (suite *RegistrySuite) TearDownSuite() {
 	assert := assert.New(suite.T())
 	err := suite.testAPI.RegistryDelete(*admin, suite.defaultRegistry.ID)
 	assert.Nil(err)
+	log.Info("+++++++++++the registry is deleted \n")
 
 	CommonDelUser()
 }
