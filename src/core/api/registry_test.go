@@ -65,6 +65,7 @@ func (suite *RegistrySuite) SetupSuite() {
 }
 
 func (suite *RegistrySuite) TearDownSuite() {
+	log.Info("==================================TearDownSuite")
 	assert := assert.New(suite.T())
 	err := suite.testAPI.RegistryDelete(*admin, suite.defaultRegistry.ID)
 	assert.Nil(err)
@@ -117,6 +118,7 @@ func (suite *RegistrySuite) TestList() {
 }
 
 func (suite *RegistrySuite) TestPost() {
+	log.Info("==================================TestPost")
 	assert := assert.New(suite.T())
 
 	// Should conflict when create exited registry
@@ -155,6 +157,7 @@ func (suite *RegistrySuite) TestRegistryPut() {
 }
 
 func (suite *RegistrySuite) TestDelete() {
+	log.Info("==================================TestDelete")
 	assert := assert.New(suite.T())
 
 	// Delete as user, should fail
