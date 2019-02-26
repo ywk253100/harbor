@@ -74,6 +74,7 @@ func (suite *RegistrySuite) TearDownSuite() {
 }
 
 func (suite *RegistrySuite) TestGet() {
+	log.Info("**************entering the TestGet case")
 	assert := assert.New(suite.T())
 
 	// Get a non-existed registry
