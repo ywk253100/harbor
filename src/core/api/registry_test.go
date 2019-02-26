@@ -167,5 +167,6 @@ func (suite *RegistrySuite) TestDelete() {
 }
 
 func TestRegistrySuite(t *testing.T) {
+	log.Info("======================================")
 	suite.Run(t, new(RegistrySuite))
 }
