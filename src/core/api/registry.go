@@ -171,6 +171,7 @@ func (t *RegistryAPI) Put() {
 
 // Delete deletes a registry
 func (t *RegistryAPI) Delete() {
+	log.Info("@@@@@@@@@@@@ got delete request")
 	id := t.GetIDFromURL()
 
 	_, err := t.manager.Get(id)

@@ -59,7 +59,7 @@ func (suite *RegistrySuite) SetupSuite() {
 		log.Errorf("==========%v \n", err)
 		return
 	}
-	log.Infof("+++++++++++%v \n", registries)
+	log.Infof("+++++++++++SuitSetup%v \n", registries)
 
 	CommonAddUser()
 }
@@ -85,13 +85,13 @@ func (suite *RegistrySuite) TestGet() {
 		log.Errorf("==========%v \n", err)
 		return
 	}
-	log.Infof("+++++++++++%v \n", registries)
+	log.Infof("+++++++++++TestGet %v \n", registries)
 
 	// Get as admin
 	retrieved, code, err := suite.testAPI.RegistryGet(*admin, suite.defaultRegistry.ID)
 	require := require.New(suite.T())
 	require.Nil(err)
-	assert.Equal(http.StatusOK, code)
+	require.Equal(http.StatusOK, code)
 	assert.Equal("test1", retrieved.Name)
 
 	// Get as user
