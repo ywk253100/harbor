@@ -45,13 +45,21 @@ type RegistrySuite struct {
 }
 
 func (suite *RegistrySuite) SetupSuite() {
-	assert := assert.New(suite.T())
-	assert.Nil(ng.Init())
+	//assert := assert.New(suite.T())
+	require := require.New(suite.T())
+	require.Nil(ng.Init())
 
 	suite.testAPI = newHarborAPI()
 	r, err := suite.testAPI.RegistryCreate(*admin, testRegistry)
-	assert.Nil(err)
+	require.Nil(err)
 	suite.defaultRegistry = r
+
+	_, registries, err := dao.ListRegistries()
+	if err != nil {
+		log.Errorf("==========%v \n", err)
+		return
+	}
+	log.Infof("+++++++++++%v \n", registries)
 
 	CommonAddUser()
 }

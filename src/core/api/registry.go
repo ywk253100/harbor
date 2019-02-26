@@ -79,6 +79,7 @@ func (t *RegistryAPI) List() {
 
 // Post creates a registry
 func (t *RegistryAPI) Post() {
+	log.Info("############### received the request")
 	registry := &model.Registry{}
 	t.DecodeJSONReqAndValidate(registry)
 
@@ -98,6 +99,8 @@ func (t *RegistryAPI) Post() {
 		log.Errorf("Add registry '%s' error: %v", registry.URL, err)
 		t.CustomAbort(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 	}
+
+	log.Info("############### handled the request")
 
 	registry.ID = id
 	t.Data["json"] = registry
