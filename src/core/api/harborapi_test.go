@@ -1136,6 +1136,7 @@ func (a testapi) RegistryCreate(authInfo usrInfo, registry *model.Registry) (*mo
 }
 
 func (a testapi) RegistryDelete(authInfo usrInfo, registryID int64) error {
+	log.Printf("QQQQQQQQQentering RegistryDelete function")
 	_sling := sling.New().Base(a.basePath).Delete(fmt.Sprintf("/api/registries/%d", registryID))
 	code, _, err := request(_sling, jsonAcceptHeader, authInfo)
 	if err != nil || code != http.StatusOK {
