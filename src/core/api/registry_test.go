@@ -4,7 +4,11 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/goharbor/harbor/src/common/dao"
+	"github.com/goharbor/harbor/src/common/utils/log"
+
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/goharbor/harbor/src/replication/ng"
@@ -67,9 +71,17 @@ func (suite *RegistrySuite) TestGet() {
 	_, code, _ := suite.testAPI.RegistryGet(*admin, 0)
 	assert.Equal(http.StatusNotFound, code)
 
+	_, registries, err := dao.ListRegistries()
+	if err != nil {
+		log.Errorf("==========%v \n", err)
+		return
+	}
+	log.Infof("+++++++++++%v \n", registries)
+
 	// Get as admin
 	retrieved, code, err := suite.testAPI.RegistryGet(*admin, suite.defaultRegistry.ID)
-	assert.Nil(err)
+	require := require.New(suite.T())
+	require.Nil(err)
 	assert.Equal(http.StatusOK, code)
 	assert.Equal("test1", retrieved.Name)
 
