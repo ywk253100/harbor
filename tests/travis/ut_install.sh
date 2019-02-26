@@ -2,11 +2,11 @@
 
 set -e
 
-cd ./src/portal
-npm install -g -q --no-progress angular-cli
-npm install -g -q --no-progress karma
-npm install -q --no-progress
-npm run build_lib && npm run link_lib && cd ../..
+#cd ./src/portal
+#npm install -g -q --no-progress angular-cli
+#npm install -g -q --no-progress karma
+#npm install -q --no-progress
+#npm run build_lib && npm run link_lib && cd ../..
 
 sudo apt-get update && sudo apt-get install -y libldap2-dev
 go get -d github.com/docker/distribution
@@ -32,7 +32,7 @@ sudo mkdir -p /harbor && sudo mv ./VERSION /harbor/UIVERSION
 sudo ./tests/testprepare.sh
 
 cd tests && sudo ./ldapprepare.sh && sudo ./admiral.sh && cd ..
-sudo make compile_adminserver
+#sudo make compile_adminserver
 sudo make -f make/photon/Makefile _build_db _build_registry -e VERSIONTAG=dev -e CLAIRDBVERSION=dev -e REGISTRYVERSION=${REG_VERSION}
 sudo sed -i 's/__reg_version__/${REG_VERSION}-dev/g' ./make/docker-compose.test.yml
 sudo sed -i 's/__version__/dev/g' ./make/docker-compose.test.yml
