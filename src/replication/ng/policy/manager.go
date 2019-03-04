@@ -26,6 +26,8 @@ type Manager interface {
 	List(...*model.PolicyQuery) (int64, []*model.Policy, error)
 	// Get policy with specified ID
 	Get(int64) (*model.Policy, error)
+	// Get policy by the name
+	GetByName(string) (*model.Policy, error)
 	// Update the specified policy, the "props" are the properties of policy
 	// that need to be updated
 	Update(policy *model.Policy, props ...string) error
