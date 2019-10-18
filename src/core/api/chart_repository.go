@@ -10,6 +10,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/goharbor/harbor/src/common"
@@ -436,6 +437,9 @@ func (cra *ChartRepositoryAPI) addEventContext(files []formFile, request *http.R
 					Metadata: &model.ResourceMetadata{
 						Repository: &model.Repository{
 							Name: fmt.Sprintf("%s/%s", cra.namespace, chartDetails.Metadata.Name),
+							Metadata: map[string]interface{}{
+								"public": strconv.FormatBool(public),
+							},
 						},
 						Vtags: []string{chartDetails.Metadata.Version},
 					},
