@@ -71,3 +71,18 @@ type Tag struct {
 	UploadTime         time.Time
 	LatestDownloadTime time.Time
 }
+
+// Query condition for query artifacts
+type Query struct {
+	RepositoryID int64
+	Digest       string
+	Tag          string
+	Type         string // image, chart, etc
+	Page         int64
+	PageSize     int64
+}
+
+// Option for pruning artifact records
+type Option struct {
+	KeepUntagged bool // keep the untagged artifacts or not
+}
