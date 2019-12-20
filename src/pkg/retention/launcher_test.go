@@ -15,6 +15,7 @@
 package retention
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -65,6 +66,10 @@ func (f *fakeProjectManager) Get(idOrName interface{}) (*models.Project, error) 
 type fakeRepositoryManager struct {
 	imageRepositories []*models.RepoRecord
 	chartRepositories []*chartserver.ChartInfo
+}
+
+func (f *fakeRepositoryManager) GetOrCreate(ctx context.Context, repository *models.RepoRecord) (bool, int64, error) {
+	return false, 0, nil
 }
 
 func (f *fakeRepositoryManager) ListImageRepositories(projectID int64) ([]*models.RepoRecord, error) {

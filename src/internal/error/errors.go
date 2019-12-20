@@ -20,8 +20,8 @@ func (e *Error) Error() string {
 }
 
 // WithMessage ...
-func (e *Error) WithMessage(msg string) *Error {
-	e.Message = msg
+func (e *Error) WithMessage(format string, v ...interface{}) *Error {
+	e.Message = fmt.Sprintf(format, v...)
 	return e
 }
 
@@ -51,7 +51,7 @@ func (errs Errors) Error() string {
 		case *Error:
 			err = e.(*Error)
 		default:
-			err = UnknownError(e).WithMessage(err.Error())
+			err = UnknownError(e).WithMessage(e.Error())
 		}
 		tmpErrs.Errors = append(tmpErrs.Errors, *err.(*Error))
 	}
@@ -84,7 +84,7 @@ const (
 	// BadRequestCode ...
 	BadRequestCode = "BAD_REQUEST"
 	// ForbiddenCode ...
-	ForbiddenCode = "FORBIDDER"
+	ForbiddenCode = "FORBIDDEN"
 	// PreconditionCode ...
 	PreconditionCode = "PRECONDITION"
 	// GeneralCode ...
@@ -93,13 +93,15 @@ const (
 
 // New ...
 func New(err error) *Error {
-	if _, ok := err.(*Error); ok {
-		err = err.(*Error).Unwrap()
+	e := &Error{}
+	if err != nil {
+		e.Cause = err
+		e.Message = err.Error()
+		if ee, ok := err.(*Error); ok {
+			e.Cause = ee
+		}
 	}
-	return &Error{
-		Cause:   err,
-		Message: err.Error(),
-	}
+	return e
 }
 
 // NotFoundError is error for the case of object not found
@@ -129,7 +131,7 @@ func ForbiddenError(err error) *Error {
 
 // PreconditionFailedError is error for the case of precondition failed
 func PreconditionFailedError(err error) *Error {
-	return New(err).WithCode(PreconditionCode).WithMessage("preconfition")
+	return New(err).WithCode(PreconditionCode).WithMessage("precondition failed")
 }
 
 // UnknownError ...
