@@ -17,6 +17,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/goharbor/harbor/src/server"
 	"net/http"
 	"strconv"
 
@@ -34,7 +35,7 @@ const (
 	maxPageSize     int64 = 500
 
 	// APIVersion is the current core api version
-	APIVersion = "v2.0"
+	APIVersion = server.APIVersion
 )
 
 // BaseAPI wraps common methods for controllers to host API

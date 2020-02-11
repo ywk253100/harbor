@@ -19,6 +19,13 @@ import (
 	v2 "github.com/goharbor/harbor/src/server/v2.0/route"
 )
 
+const (
+	// APIVersion indicates the current version of the management API
+	// As we may maintain several versions of API at the same time,
+	// the "APIVersion" here is the current recommended one
+	APIVersion = v2.APIVersion
+)
+
 // RegisterRoutes register all routes
 func RegisterRoutes() {
 	registerRoutes()          // service/internal API/UI controller/etc.

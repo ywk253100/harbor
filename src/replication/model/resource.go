@@ -16,7 +16,9 @@ package model
 
 // the resource type
 const (
+	// TODO rename it to OCI artifact?
 	ResourceTypeImage ResourceType = "image"
+	// TODO rename it to chartmuseum chart?
 	ResourceTypeChart ResourceType = "chart"
 )
 

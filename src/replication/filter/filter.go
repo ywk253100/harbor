@@ -17,6 +17,7 @@ package filter
 import (
 	"errors"
 	"reflect"
+	"strings"
 
 	"github.com/goharbor/harbor/src/common/utils/log"
 	"github.com/goharbor/harbor/src/replication/util"
@@ -25,6 +26,7 @@ import (
 // const definitions
 const (
 	FilterableTypeRepository = "repository"
+	FilterableTypeArtifact   = "artifact"
 	FilterableTypeVTag       = "vtag"
 )
 
@@ -87,7 +89,7 @@ func (r *resourceTypeFilter) ApplyTo(filterable Filterable) bool {
 		return false
 	}
 	switch filterable.GetFilterableType() {
-	case FilterableTypeRepository, FilterableTypeVTag:
+	case FilterableTypeRepository, FilterableTypeArtifact, FilterableTypeVTag:
 		return true
 	default:
 		return false
@@ -97,7 +99,7 @@ func (r *resourceTypeFilter) ApplyTo(filterable Filterable) bool {
 func (r *resourceTypeFilter) Filter(filterables ...Filterable) ([]Filterable, error) {
 	result := []Filterable{}
 	for _, filterable := range filterables {
-		if filterable.GetResourceType() == r.resourceType {
+		if strings.ToLower(filterable.GetResourceType()) == strings.ToLower(r.resourceType) {
 			result = append(result, filterable)
 		}
 	}
