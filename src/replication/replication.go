@@ -29,29 +29,31 @@ import (
 
 	// register the Harbor adapter
 	_ "github.com/goharbor/harbor/src/replication/adapter/harbor"
-	// register the DockerHub adapter
-	_ "github.com/goharbor/harbor/src/replication/adapter/dockerhub"
-	// register the Native adapter
-	_ "github.com/goharbor/harbor/src/replication/adapter/native"
-	// register the huawei adapter
-	_ "github.com/goharbor/harbor/src/replication/adapter/huawei"
-	// register the Google Gcr adapter
-	_ "github.com/goharbor/harbor/src/replication/adapter/googlegcr"
-	// register the AwsEcr adapter
-	_ "github.com/goharbor/harbor/src/replication/adapter/awsecr"
-	// register the AzureAcr adapter
-	_ "github.com/goharbor/harbor/src/replication/adapter/azurecr"
-	// register the AliACR adapter
-	_ "github.com/goharbor/harbor/src/replication/adapter/aliacr"
-	// register the Jfrog Artifactory adapter
-	_ "github.com/goharbor/harbor/src/replication/adapter/jfrog"
-	// register the Quay.io adapter
-	_ "github.com/goharbor/harbor/src/replication/adapter/quayio"
-	// register the Helm Hub adapter
-	_ "github.com/goharbor/harbor/src/replication/adapter/helmhub"
-	// register the GitLab adapter
-	_ "github.com/goharbor/harbor/src/replication/adapter/gitlab"
-)
+	/*
+		// register the DockerHub adapter
+		_ "github.com/goharbor/harbor/src/replication/adapter/dockerhub"
+		// register the Native adapter
+		_ "github.com/goharbor/harbor/src/replication/adapter/native"
+		// register the huawei adapter
+		_ "github.com/goharbor/harbor/src/replication/adapter/huawei"
+		// register the Google Gcr adapter
+		_ "github.com/goharbor/harbor/src/replication/adapter/googlegcr"
+		// register the AwsEcr adapter
+		_ "github.com/goharbor/harbor/src/replication/adapter/awsecr"
+		// register the AzureAcr adapter
+		_ "github.com/goharbor/harbor/src/replication/adapter/azurecr"
+		// register the AliACR adapter
+		_ "github.com/goharbor/harbor/src/replication/adapter/aliacr"
+		// register the Jfrog Artifactory adapter
+		_ "github.com/goharbor/harbor/src/replication/adapter/jfrog"
+		// register the Quay.io adapter
+		_ "github.com/goharbor/harbor/src/replication/adapter/quayio"
+		// register the Helm Hub adapter
+		_ "github.com/goharbor/harbor/src/replication/adapter/helmhub"
+		// register the GitLab adapter
+		_ "github.com/goharbor/harbor/src/replication/adapter/gitlab"
+
+	*/)
 
 var (
 	// PolicyCtl is a global policy controller

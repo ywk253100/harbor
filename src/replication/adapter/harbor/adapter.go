@@ -17,7 +17,7 @@ package harbor
 import (
 	"errors"
 	"fmt"
-	"github.com/goharbor/harbor/src/server"
+	"github.com/goharbor/harbor/src/common/api"
 	"net/http"
 	"strconv"
 	"strings"
@@ -97,8 +97,10 @@ func newAdapter(registry *model.Registry) (*adapter, error) {
 func (a *adapter) Info() (*model.RegistryInfo, error) {
 	info := &model.RegistryInfo{
 		Type: model.RegistryTypeHarbor,
-		SupportedResourceTypes: []model.ResourceType{
-			model.ResourceTypeImage,
+		// TODO
+		SupportedResourceTypes: []string{
+			//model.ResourceTypeImage,
+			"image",
 		},
 		SupportedResourceFilters: []*model.FilterStyle{
 			{
@@ -119,17 +121,18 @@ func (a *adapter) Info() (*model.RegistryInfo, error) {
 	sys := &struct {
 		ChartRegistryEnabled bool `json:"with_chartmuseum"`
 	}{}
-	if err := a.client.Get(fmt.Sprintf("%s/api/%s/systeminfo", a.getURL(), server.APIVersion), sys); err != nil {
+	if err := a.client.Get(fmt.Sprintf("%s/api/%s/systeminfo", a.getURL(), api.APIVersion), sys); err != nil {
 		return nil, err
 	}
 	if sys.ChartRegistryEnabled {
-		info.SupportedResourceTypes = append(info.SupportedResourceTypes, model.ResourceTypeChart)
+		// TODO
+		//info.SupportedResourceTypes = append(info.SupportedResourceTypes, model.ResourceTypeChart)
 	}
 	labels := []*struct {
 		Name string `json:"name"`
 	}{}
 	// label isn't supported in some previous version of Harbor
-	if err := a.client.Get(fmt.Sprintf("%s/api/%s/labels?scope=g", a.getURL(), server.APIVersion), &labels); err != nil {
+	if err := a.client.Get(fmt.Sprintf("%s/api/%s/labels?scope=g", a.getURL(), api.APIVersion), &labels); err != nil {
 		if e, ok := err.(*common_http.Error); !ok || e.Code != http.StatusNotFound {
 			return nil, err
 		}
@@ -154,20 +157,17 @@ func (a *adapter) PrepareForPush(resources []*model.Resource) error {
 		if resource == nil {
 			return errors.New("the resource cannot be null")
 		}
-		if resource.Metadata == nil {
-			return errors.New("the metadata of resource cannot be null")
-		}
-		if resource.Metadata.Repository == nil {
+		if resource.Repository == nil {
 			return errors.New("the repository of resource cannot be null")
 		}
-		if len(resource.Metadata.Repository.Name) == 0 {
+		if len(resource.Repository.Name) == 0 {
 			return errors.New("the name of the repository cannot be null")
 		}
 
-		paths := strings.Split(resource.Metadata.Repository.Name, "/")
+		paths := strings.Split(resource.Repository.Name, "/")
 		projectName := paths[0]
 		// handle the public properties
-		metadata := abstractPublicMetadata(resource.Metadata.Repository.Metadata)
+		metadata := abstractPublicMetadata(resource.Repository.Metadata)
 		pro, exist := projects[projectName]
 		if exist {
 			metadata = mergeMetadata(pro.Metadata, metadata)
@@ -185,7 +185,7 @@ func (a *adapter) PrepareForPush(resources []*model.Resource) error {
 			Name:     project.Name,
 			Metadata: project.Metadata,
 		}
-		err := a.client.Post(fmt.Sprintf("%s/api/%s/projects", a.getURL(), server.APIVersion), pro)
+		err := a.client.Post(fmt.Sprintf("%s/api/%s/projects", a.getURL(), api.APIVersion), pro)
 		if err != nil {
 			if httpErr, ok := err.(*common_http.Error); ok && httpErr.Code == http.StatusConflict {
 				log.Debugf("got 409 when trying to create project %s", project.Name)
@@ -251,7 +251,7 @@ type project struct {
 
 func (a *adapter) getProjects(name string) ([]*project, error) {
 	projects := []*project{}
-	url := fmt.Sprintf("%s/api/%s/projects?name=%s&page=1&page_size=500", a.getURL(), server.APIVersion, name)
+	url := fmt.Sprintf("%s/api/%s/projects?name=%s&page=1&page_size=500", a.getURL(), api.APIVersion, name)
 	if err := a.client.GetAndIteratePagination(url, &projects); err != nil {
 		return nil, err
 	}
@@ -282,18 +282,6 @@ func (a *adapter) getProject(name string) (*project, error) {
 		}
 	}
 	return nil, nil
-}
-
-func (a *adapter) getRepositories(project string) ([]*adp.Repository, error) {
-	repositories := []*adp.Repository{}
-	url := fmt.Sprintf("%s/api/%s/projects/%s/repositories", a.getURL(), server.APIVersion, project)
-	if err := a.client.GetAndIteratePagination(url, &repositories); err != nil {
-		return nil, err
-	}
-	for _, repository := range repositories {
-		repository.ResourceType = string(model.ResourceTypeImage)
-	}
-	return repositories, nil
 }
 
 // when the adapter is created for local Harbor, returns the "http://127.0.0.1:8080"

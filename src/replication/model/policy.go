@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/goharbor/harbor/src/replication/filter"
+	//"github.com/goharbor/harbor/src/replication/filter"
 
 	"github.com/astaxie/beego/validation"
 	"github.com/goharbor/harbor/src/common/models"
@@ -90,18 +90,23 @@ func (p *Policy) Valid(v *validation.Validation) {
 	for _, filter := range p.Filters {
 		switch filter.Type {
 		case FilterTypeResource, FilterTypeName, FilterTypeTag:
-			value, ok := filter.Value.(string)
-			if !ok {
-				v.SetError("filters", "the type of filter value isn't string")
-				break
-			}
-			if filter.Type == FilterTypeResource {
-				rt := ResourceType(value)
-				if !(rt == ResourceTypeImage || rt == ResourceTypeChart) {
-					v.SetError("filters", fmt.Sprintf("invalid resource filter: %s", value))
+			// TODO
+			/*
+				value, ok := filter.Value.(string)
+				if !ok {
+					v.SetError("filters", "the type of filter value isn't string")
 					break
 				}
-			}
+
+					if filter.Type == FilterTypeResource {
+						rt := ResourceType(value)
+						if !(rt == ResourceTypeImage || rt == ResourceTypeChart) {
+							v.SetError("filters", fmt.Sprintf("invalid resource filter: %s", value))
+							break
+						}
+					}
+			*/
+
 		case FilterTypeLabel:
 			labels, ok := filter.Value.([]interface{})
 			if !ok {
@@ -149,6 +154,7 @@ type Filter struct {
 	Value interface{} `json:"value"`
 }
 
+/*
 // DoFilter filter the filterables
 // The parameter "filterables" must be a pointer points to a slice
 // whose elements must be Filterable. After applying the filter
@@ -174,7 +180,7 @@ func (f *Filter) DoFilter(filterables interface{}) error {
 
 	return filter.DoFilter(filterables, ft)
 }
-
+*/
 // TriggerType represents the type of trigger.
 type TriggerType string
 

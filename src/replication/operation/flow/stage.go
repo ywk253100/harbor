@@ -110,75 +110,79 @@ func fetchResources(adapter adp.Adapter, policy *model.Policy) ([]*model.Resourc
 
 // apply the filters to the resources and returns the filtered resources
 func filterResources(resources []*model.Resource, filters []*model.Filter) ([]*model.Resource, error) {
-	var res []*model.Resource
-	for _, resource := range resources {
-		match := true
-	FILTER_LOOP:
-		for _, filter := range filters {
-			switch filter.Type {
-			case model.FilterTypeResource:
-				resourceType, ok := filter.Value.(model.ResourceType)
-				if !ok {
-					return nil, fmt.Errorf("%v is not a valid string", filter.Value)
-				}
-				if model.ResourceType(resourceType) != resource.Type {
-					match = false
-					break FILTER_LOOP
-				}
-			case model.FilterTypeName:
-				pattern, ok := filter.Value.(string)
-				if !ok {
-					return nil, fmt.Errorf("%v is not a valid string", filter.Value)
-				}
-				if resource.Metadata == nil {
-					match = false
-					break FILTER_LOOP
-				}
-				m, err := util.Match(pattern, resource.Metadata.Repository.Name)
-				if err != nil {
-					return nil, err
-				}
-				if !m {
-					match = false
-					break FILTER_LOOP
-				}
-			case model.FilterTypeTag:
-				pattern, ok := filter.Value.(string)
-				if !ok {
-					return nil, fmt.Errorf("%v is not a valid string", filter.Value)
-				}
-				if resource.Metadata == nil {
-					match = false
-					break FILTER_LOOP
-				}
-				var versions []string
-				for _, version := range resource.Metadata.Vtags {
-					m, err := util.Match(pattern, version)
+	// TODO
+	/*
+		var res []*model.Resource
+		for _, resource := range resources {
+			match := true
+		FILTER_LOOP:
+			for _, filter := range filters {
+				switch filter.Type {
+				case model.FilterTypeResource:
+					resourceType, ok := filter.Value.(model.ResourceType)
+					if !ok {
+						return nil, fmt.Errorf("%v is not a valid string", filter.Value)
+					}
+					if model.ResourceType(resourceType) != resource.Type {
+						match = false
+						break FILTER_LOOP
+					}
+				case model.FilterTypeName:
+					pattern, ok := filter.Value.(string)
+					if !ok {
+						return nil, fmt.Errorf("%v is not a valid string", filter.Value)
+					}
+					if resource.Metadata == nil {
+						match = false
+						break FILTER_LOOP
+					}
+					m, err := util.Match(pattern, resource.Metadata.Repository.Name)
 					if err != nil {
 						return nil, err
 					}
-					if m {
-						versions = append(versions, version)
+					if !m {
+						match = false
+						break FILTER_LOOP
 					}
+				case model.FilterTypeTag:
+					pattern, ok := filter.Value.(string)
+					if !ok {
+						return nil, fmt.Errorf("%v is not a valid string", filter.Value)
+					}
+					if resource.Metadata == nil {
+						match = false
+						break FILTER_LOOP
+					}
+					var versions []string
+					for _, version := range resource.Metadata.Vtags {
+						m, err := util.Match(pattern, version)
+						if err != nil {
+							return nil, err
+						}
+						if m {
+							versions = append(versions, version)
+						}
+					}
+					if len(versions) == 0 {
+						match = false
+						break FILTER_LOOP
+					}
+					// NOTE: the property "Vtags" of the origin resource struct is overrided here
+					resource.Metadata.Vtags = versions
+				case model.FilterTypeLabel:
+					// TODO add support to label
+				default:
+					return nil, fmt.Errorf("unsupportted filter type: %v", filter.Type)
 				}
-				if len(versions) == 0 {
-					match = false
-					break FILTER_LOOP
-				}
-				// NOTE: the property "Vtags" of the origin resource struct is overrided here
-				resource.Metadata.Vtags = versions
-			case model.FilterTypeLabel:
-				// TODO add support to label
-			default:
-				return nil, fmt.Errorf("unsupportted filter type: %v", filter.Type)
+			}
+			if match {
+				res = append(res, resource)
 			}
 		}
-		if match {
-			res = append(res, resource)
-		}
-	}
-	log.Debug("filter resources completed")
-	return res, nil
+		log.Debug("filter resources completed")
+		return res, nil
+	*/
+	return nil, nil
 }
 
 // assemble the source resources by filling the registry information
@@ -197,18 +201,16 @@ func assembleDestinationResources(resources []*model.Resource,
 	var result []*model.Resource
 	for _, resource := range resources {
 		res := &model.Resource{
-			Type:         resource.Type,
-			Registry:     policy.DestRegistry,
+			Registry: policy.DestRegistry,
+			Repository: &model.Repository{
+				Type:     resource.Repository.Type,
+				Name:     replaceNamespace(resource.Repository.Name, policy.DestNamespace),
+				Metadata: resource.Repository.Metadata,
+			},
+			Artifacts:    resource.Artifacts,
 			ExtendedInfo: resource.ExtendedInfo,
 			Deleted:      resource.Deleted,
 			Override:     policy.Override,
-		}
-		res.Metadata = &model.ResourceMetadata{
-			Repository: &model.Repository{
-				Name:     replaceNamespace(resource.Metadata.Repository.Name, policy.DestNamespace),
-				Metadata: resource.Metadata.Repository.Metadata,
-			},
-			Vtags: resource.Metadata.Vtags,
 		}
 		result = append(result, res)
 	}
@@ -246,7 +248,7 @@ func createTasks(mgr execution.Manager, executionID int64, items []*scheduler.Sc
 		task := &models.Task{
 			ExecutionID:  executionID,
 			Status:       models.TaskStatusInitialized,
-			ResourceType: string(item.SrcResource.Type),
+			ResourceType: string(item.SrcResource.Repository.Type),
 			SrcResource:  getResourceName(item.SrcResource),
 			DstResource:  getResourceName(item.DstResource),
 			Operation:    operation,
@@ -324,26 +326,30 @@ func isExecutionStopped(mgr execution.Manager, id int64) (bool, error) {
 	return execution.Status == models.ExecutionStatusStopped, nil
 }
 
+// TODO
 // return the name with format "res_name" or "res_name:[vtag1,vtag2,vtag3]"
 // if the resource has vtags
 func getResourceName(res *model.Resource) string {
-	if res == nil {
-		return ""
-	}
-	meta := res.Metadata
-	if meta == nil {
-		return ""
-	}
-	repositoryName := meta.Repository.Name
-	if len(meta.Vtags) == 0 {
-		return repositoryName
-	}
+	/*
+		if res == nil {
+			return ""
+		}
+		meta := res.Metadata
+		if meta == nil {
+			return ""
+		}
+		repositoryName := meta.Repository.Name
+		if len(meta.Vtags) == 0 {
+			return repositoryName
+		}
 
-	if len(meta.Vtags) == 1 {
-		return repositoryName + ":[" + meta.Vtags[0] + "]"
-	}
+		if len(meta.Vtags) == 1 {
+			return repositoryName + ":[" + meta.Vtags[0] + "]"
+		}
 
-	return fmt.Sprintf("%s:[%s ... %d in total]", repositoryName, meta.Vtags[0], len(meta.Vtags))
+		return fmt.Sprintf("%s:[%s ... %d in total]", repositoryName, meta.Vtags[0], len(meta.Vtags))
+	*/
+	return ""
 }
 
 // repository:c namespace:n -> n/c

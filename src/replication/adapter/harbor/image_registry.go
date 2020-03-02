@@ -16,36 +16,41 @@ package harbor
 
 import (
 	"fmt"
-	art "github.com/goharbor/harbor/src/api/artifact"
+	"github.com/goharbor/harbor/src/api/artifact"
+	"github.com/goharbor/harbor/src/common/api"
+	"github.com/goharbor/harbor/src/common/models"
 	"github.com/goharbor/harbor/src/common/utils"
 	"github.com/goharbor/harbor/src/common/utils/log"
 	adp "github.com/goharbor/harbor/src/replication/adapter"
 	"github.com/goharbor/harbor/src/replication/filter"
 	"github.com/goharbor/harbor/src/replication/model"
 	"github.com/goharbor/harbor/src/replication/util"
-	"github.com/goharbor/harbor/src/server"
 	"strings"
 )
 
 func (a *adapter) FetchImages(filters []*model.Filter) ([]*model.Resource, error) {
-	projects, err := a.listCandidateProjects(filters)
+	repoFilters, err := filter.BuildRepositoryFilters(filters)
+	if err != nil {
+		return nil, err
+	}
+	artFilters, err := filter.BuildArtifactFilters(filters)
+	if err != nil {
+		return nil, err
+	}
+
+	projects, err := a.listProjects(filters)
 	if err != nil {
 		return nil, err
 	}
 
 	resources := []*model.Resource{}
 	for _, project := range projects {
-		repositories, err := a.getRepositories(project.Name)
+		repositories, err := a.listRepositories(project, repoFilters)
 		if err != nil {
 			return nil, err
 		}
 		if len(repositories) == 0 {
 			continue
-		}
-		for _, filter := range filters {
-			if err = filter.DoFilter(&repositories); err != nil {
-				return nil, err
-			}
 		}
 
 		var rawResources = make([]*model.Resource, len(repositories))
@@ -54,55 +59,29 @@ func (a *adapter) FetchImages(filters []*model.Filter) ([]*model.Resource, error
 
 		for i, r := range repositories {
 			index := i
-			repo := r
+			repository := r
 			runner.AddTask(func() error {
-				artifacts, err := a.listArtifacts(repo.Name)
+				artifacts, err := a.listArtifacts(repository.Name, artFilters)
 				if err != nil {
-					return fmt.Errorf("failed to list artifacts of repository '%s': %v", repo.Name, err)
+					return fmt.Errorf("failed to list artifacts of repository '%s': %v", repository.Name, err)
 				}
 				if len(artifacts) == 0 {
 					rawResources[index] = nil
 					return nil
-				}
-				for _, filter := range filters {
-					if err = filter.DoFilter(&artifacts); err != nil {
-						return fmt.Errorf("failed to filter the artifacts: %v", err)
-					}
-				}
-				if len(artifacts) == 0 {
-					rawResources[index] = nil
-					return nil
-				}
-				var vTags []*adp.VTag
-				for _, artifact := range artifacts {
-					for _, tag := range artifact.Tags {
-						vTags = append(vTags, &adp.VTag{
-							ResourceType: string(model.ResourceTypeImage),
-							Name:         tag.Name,
-						})
-					}
-				}
-				for _, filter := range filters {
-					if err = filter.DoFilter(&vTags); err != nil {
-						return fmt.Errorf("failed to filter the vtags: %v", err)
-					}
-				}
-				tags := []string{}
-				for _, vTag := range vTags {
-					tags = append(tags, vTag.Name)
-				}
-				rawResources[index] = &model.Resource{
-					Type:     model.ResourceTypeImage,
-					Registry: a.registry,
-					Metadata: &model.ResourceMetadata{
-						Repository: &model.Repository{
-							Name:     repo.Name,
-							Metadata: project.Metadata,
-						},
-						Vtags: tags,
-					},
 				}
 
+				rawResources[index] = &model.Resource{
+					Registry: a.registry,
+					Repository: &model.Repository{
+						Type:     model.RepositoryTypeOCIRegistry,
+						Name:     repository.Name,
+						Metadata: project.Metadata,
+					},
+					Artifacts:    artifacts,
+					ExtendedInfo: nil,
+					Deleted:      false,
+					Override:     false,
+				}
 				return nil
 			})
 		}
@@ -122,7 +101,7 @@ func (a *adapter) FetchImages(filters []*model.Filter) ([]*model.Resource, error
 	return resources, nil
 }
 
-func (a *adapter) listCandidateProjects(filters []*model.Filter) ([]*project, error) {
+func (a *adapter) listProjects(filters []*model.Filter) ([]*project, error) {
 	pattern := ""
 	for _, filter := range filters {
 		if filter.Type == model.FilterTypeName {
@@ -159,31 +138,44 @@ func (a *adapter) listCandidateProjects(filters []*model.Filter) ([]*project, er
 	return a.getProjects("")
 }
 
-func (a *adapter) listArtifacts(repository string) ([]*artifact, error) {
+func (a *adapter) listRepositories(project *project, filters filter.RepositoryFilters) ([]*model.Repository, error) {
+	repositories := []*models.RepoRecord{}
+	url := fmt.Sprintf("%s/api/%s/projects/%s/repositories", a.getURL(), api.APIVersion, project.Name)
+	if err := a.client.GetAndIteratePagination(url, &repositories); err != nil {
+		return nil, err
+	}
+	var repos []*model.Repository
+	for _, repository := range repositories {
+		repos = append(repos, &model.Repository{
+			Type:     model.RepositoryTypeOCIRegistry,
+			Name:     repository.Name,
+			Metadata: project.Metadata,
+		})
+	}
+	return filters.Filter(repos)
+}
+
+func (a *adapter) listArtifacts(repository string, filters filter.ArtifactFilters) ([]*model.Artifact, error) {
 	project, repository := utils.ParseRepository(repository)
 	url := fmt.Sprintf("%s/api/%s/projects/%s/repositories/%s/artifacts",
-		a.getURL(), server.APIVersion, project, repository)
-	artifacts := []*artifact{}
+		a.getURL(), api.APIVersion, project, repository)
+	artifacts := []*artifact.Artifact{}
 	if err := a.client.Get(url, &artifacts); err != nil {
 		return nil, err
 	}
-	return artifacts, nil
-}
-
-type artifact struct {
-	art.Artifact
-}
-
-func (a *artifact) GetFilterableType() filter.FilterableType {
-	return filter.FilterableTypeArtifact
-}
-func (a *artifact) GetResourceType() string {
-	return string(model.ResourceTypeImage)
-}
-func (a *artifact) GetName() string {
-	return ""
-}
-func (a *artifact) GetLabels() []string {
-	// TODO set labels
-	return nil
+	var arts []*model.Artifact
+	for _, artifact := range artifacts {
+		art := &model.Artifact{
+			Type:   artifact.Type,
+			Digest: artifact.Digest,
+		}
+		for _, label := range artifact.Labels {
+			art.Labels = append(art.Labels, label.Name)
+		}
+		for _, tag := range artifact.Tags {
+			art.Tags = append(art.Tags, tag.Name)
+		}
+		arts = append(arts, art)
+	}
+	return filters.Filter(arts)
 }

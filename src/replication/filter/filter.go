@@ -14,6 +14,7 @@
 
 package filter
 
+/*
 import (
 	"errors"
 	"reflect"
@@ -25,28 +26,25 @@ import (
 
 // const definitions
 const (
-	FilterableTypeRepository = "repository"
-	FilterableTypeArtifact   = "artifact"
-	FilterableTypeVTag       = "vtag"
-)
+	FilterableTypeRepository = "REPOSITORY"
+	FilterableTypeArtifact   = "ARTIFACT"
+	FilterableTypeVTag       = "TAG"
 
-// FilterableType specifies the type of the filterable
-type FilterableType string
+	TargetTypeRepository = "REPOSITORY"
+	TargetTypeArtifact   = "ARTIFACT"
+	TargetTypeTag        = "TAG"
+)
 
 // Filterable defines the methods that a filterable object must implement
 type Filterable interface {
 	// return what the type of the filterable object is(repository or vtag)
-	GetFilterableType() FilterableType
-	// return the resource type of the filterable object(image, chart, ...)
-	GetResourceType() string
-	GetName() string
-	GetLabels() []string
+	GetFilterableType() string
 }
 
 // Filter defines the methods that a filter must implement
 type Filter interface {
 	// return whether the filter is applied to the specified Filterable
-	ApplyTo(Filterable) bool
+	ApplyTo() string
 	Filter(...Filterable) ([]Filterable, error)
 }
 
@@ -253,3 +251,4 @@ func doFilter(filterables []Filterable, filters ...Filter) ([]Filterable, error)
 	}
 	return filterables, nil
 }
+*/

@@ -16,9 +16,13 @@ package model
 
 // the resource type
 const (
-	// TODO rename it to OCI artifact?
+	RepositoryTypeChartMuseum = "CHART_MUSEUM"
+	RepositoryTypeOCIRegistry = "OCI_REGISTRY"
+)
+
+// the resource type
+const (
 	ResourceTypeImage ResourceType = "image"
-	// TODO rename it to chartmuseum chart?
 	ResourceTypeChart ResourceType = "chart"
 )
 
@@ -30,37 +34,26 @@ func (r ResourceType) Valid() bool {
 	return len(r) > 0
 }
 
-// ResourceMetadata of resource
-type ResourceMetadata struct {
-	Repository *Repository `json:"repository"`
-	Vtags      []string    `json:"v_tags"`
-	// TODO the labels should be put into tag and repository level?
-	Labels []string `json:"labels"`
-}
-
-// GetResourceName returns the name of the resource
-// TODO remove
-func (r *ResourceMetadata) GetResourceName() string {
-	if r.Repository == nil {
-		return ""
-	}
-	return r.Repository.Name
+// Resource represents the general replicating content
+type Resource struct {
+	Registry     *Registry              `json:"registry"`
+	Repository   *Repository            `json:"repository"`
+	Artifacts    []*Artifact            `json:"artifact"`
+	ExtendedInfo map[string]interface{} `json:"extended_info"`
+	Deleted      bool                   `json:"deleted"`  // Indicate if the resource is a deleted resource
+	Override     bool                   `json:"override"` // indicate whether the resource can be overridden
 }
 
 // Repository info of the resource
 type Repository struct {
+	Type     string                 `json:"type"` // chartmuseum repo or registry repo
 	Name     string                 `json:"name"`
 	Metadata map[string]interface{} `json:"metadata"`
 }
 
-// Resource represents the general replicating content
-type Resource struct {
-	Type         ResourceType           `json:"type"`
-	Metadata     *ResourceMetadata      `json:"metadata"`
-	Registry     *Registry              `json:"registry"`
-	ExtendedInfo map[string]interface{} `json:"extended_info"`
-	// Indicate if the resource is a deleted resource
-	Deleted bool `json:"deleted"`
-	// indicate whether the resource can be overridden
-	Override bool `json:"override"`
+type Artifact struct {
+	Type   string   `json:"type"`
+	Digest string   `json:"digest"`
+	Labels []string `json:"labels"`
+	Tags   []string `json:"tags"`
 }

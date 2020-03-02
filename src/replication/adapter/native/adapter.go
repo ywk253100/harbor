@@ -15,15 +15,12 @@
 package native
 
 import (
-	"fmt"
-	"github.com/goharbor/harbor/src/common/utils"
 	"github.com/goharbor/harbor/src/common/utils/log"
 	"github.com/goharbor/harbor/src/internal"
 	ierror "github.com/goharbor/harbor/src/internal/error"
 	"github.com/goharbor/harbor/src/pkg/registry"
 	adp "github.com/goharbor/harbor/src/replication/adapter"
 	"github.com/goharbor/harbor/src/replication/model"
-	"github.com/goharbor/harbor/src/replication/util"
 	"sync"
 )
 
@@ -125,6 +122,7 @@ func (a *Adapter) HealthCheck() (model.HealthStatus, error) {
 	return model.Healthy, nil
 }
 
+/*
 // FetchImages ...
 func (a *Adapter) FetchImages(filters []*model.Filter) ([]*model.Resource, error) {
 	repositories, err := a.getRepositories(filters)
@@ -243,7 +241,7 @@ func (a *Adapter) getVTags(repository string) ([]*adp.VTag, error) {
 	}
 	return result, nil
 }
-
+*/
 // PingSimple checks whether the registry is available. It checks the connectivity and certificate (if TLS enabled)
 // only, regardless of 401/403 error.
 func (a *Adapter) PingSimple() error {
