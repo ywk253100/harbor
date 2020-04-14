@@ -371,6 +371,11 @@ func (c *client) PushBlob(repository, digest string, size int64, blob io.Reader)
 		return err
 	}
 	fmt.Printf("=======================init blob upload done \n")
+	data, err := ioutil.ReadAll(blob)
+	if err != nil {
+		return err
+	}
+	blob = bytes.NewReader(data)
 	return c.monolithicBlobUpload(location, digest, size, blob)
 }
 
