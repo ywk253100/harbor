@@ -511,10 +511,12 @@ func (c *client) do(req *http.Request) (*http.Response, error) {
 		}
 	}
 	req.Header.Set(http.CanonicalHeaderKey("User-Agent"), UserAgent)
+	fmt.Printf("=======================before the do of client \n")
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("=======================before the do of client \n")
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		defer resp.Body.Close()
 		body, err := ioutil.ReadAll(resp.Body)
