@@ -263,12 +263,16 @@ func (t *transfer) copyBlob(srcRepo, dstRepo, digest string) error {
 		return nil
 	}
 
+	t.logger.Infof("the blob %s doesn't exist on the destination registry, continue", digest)
+
 	size, data, err := t.src.PullBlob(srcRepo, digest)
 	if err != nil {
 		t.logger.Errorf("failed to pulling the blob %s: %v", digest, err)
 		return err
 	}
 	defer data.Close()
+	t.logger.Infof("the blob %s pulled, size: %d", digest, size)
+
 	if err = t.dst.PushBlob(dstRepo, digest, size, data); err != nil {
 		t.logger.Errorf("failed to pushing the blob %s: %v", digest, err)
 		return err
