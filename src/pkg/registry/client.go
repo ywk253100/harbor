@@ -365,10 +365,12 @@ func (c *client) PullBlob(repository, digest string) (int64, io.ReadCloser, erro
 }
 
 func (c *client) PushBlob(repository, digest string, size int64, blob io.Reader) error {
+	fmt.Printf("=======================begin init blob upload... \n")
 	location, _, err := c.initiateBlobUpload(repository)
 	if err != nil {
 		return err
 	}
+	fmt.Printf("=======================init blob upload done \n")
 	return c.monolithicBlobUpload(location, digest, size, blob)
 }
 
@@ -378,10 +380,12 @@ func (c *client) initiateBlobUpload(repository string) (string, string, error) {
 		return "", "", err
 	}
 	req.Header.Set(http.CanonicalHeaderKey("Content-Length"), "0")
+	fmt.Printf("=======================before the do of init blob upload \n")
 	resp, err := c.do(req)
 	if err != nil {
 		return "", "", err
 	}
+	fmt.Printf("=======================after the do of init blob upload \n")
 	defer resp.Body.Close()
 	return resp.Header.Get(http.CanonicalHeaderKey("Location")),
 		resp.Header.Get(http.CanonicalHeaderKey("Docker-Upload-UUID")), nil
@@ -397,10 +401,12 @@ func (c *client) monolithicBlobUpload(location, digest string, size int64, data 
 		return err
 	}
 	req.ContentLength = size
+	fmt.Printf("=======================before the do of mono blob upload \n")
 	resp, err := c.do(req)
 	if err != nil {
 		return err
 	}
+	fmt.Printf("=======================after the do of mono blob upload \n")
 	defer resp.Body.Close()
 	return nil
 }
