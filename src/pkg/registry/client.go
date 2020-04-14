@@ -407,7 +407,7 @@ func (c *client) monolithicBlobUpload(location, digest string, size int64, data 
 	if err != nil {
 		return err
 	}
-	req.ContentLength = size
+	req.ContentLength = -1
 	fmt.Printf("=======================before the do of mono blob upload \n")
 	resp, err := c.do(req)
 	if err != nil {
@@ -523,7 +523,7 @@ func (c *client) do(req *http.Request) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("=======================before the do of client \n")
+	fmt.Printf("=======================after the do of client \n")
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		defer resp.Body.Close()
 		body, err := ioutil.ReadAll(resp.Body)
