@@ -371,13 +371,13 @@ func (c *client) PushBlob(repository, digest string, size int64, blob io.Reader)
 		return err
 	}
 	fmt.Printf("=======================init blob upload done \n")
-	data, err := ioutil.ReadAll(blob)
-	if err != nil {
-		return err
-	}
-	fmt.Printf("=======================size: %d %d \n", size, len(data))
+	//data, err := ioutil.ReadAll(blob)
+	//if err != nil {
+	//	return err
+	//}
+	//fmt.Printf("=======================size: %d %d \n", size, len(data))
 
-	blob = bytes.NewReader(data)
+	//blob = bytes.NewReader(data)
 	return c.monolithicBlobUpload(location, digest, size, blob)
 }
 
@@ -407,7 +407,7 @@ func (c *client) monolithicBlobUpload(location, digest string, size int64, data 
 	if err != nil {
 		return err
 	}
-	req.ContentLength = size
+	req.ContentLength = -1
 	fmt.Printf("=======================before the do of mono blob upload \n")
 	resp, err := c.do(req)
 	if err != nil {
