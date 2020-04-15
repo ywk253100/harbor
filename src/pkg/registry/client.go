@@ -405,6 +405,7 @@ func (c *client) monolithicBlobUpload(location, digest string, size int64, data 
 	}
 	req.ContentLength = size
 	fmt.Printf("=======================before the do of mono blob upload \n")
+	fmt.Printf("****************************************** \n")
 	resp, err := c.do(req)
 	if err != nil {
 		return err
