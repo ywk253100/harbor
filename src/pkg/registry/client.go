@@ -365,12 +365,10 @@ func (c *client) PullBlob(repository, digest string) (int64, io.ReadCloser, erro
 }
 
 func (c *client) PushBlob(repository, digest string, size int64, blob io.Reader) error {
-	fmt.Printf("=======================begin init blob upload... \n")
 	location, _, err := c.initiateBlobUpload(repository)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("=======================init blob upload done \n")
 	//data, err := ioutil.ReadAll(blob)
 	//if err != nil {
 	//	return err
@@ -387,12 +385,10 @@ func (c *client) initiateBlobUpload(repository string) (string, string, error) {
 		return "", "", err
 	}
 	req.Header.Set(http.CanonicalHeaderKey("Content-Length"), "0")
-	fmt.Printf("=======================before the do of init blob upload \n")
 	resp, err := c.do(req)
 	if err != nil {
 		return "", "", err
 	}
-	fmt.Printf("=======================after the do of init blob upload \n")
 	defer resp.Body.Close()
 	return resp.Header.Get(http.CanonicalHeaderKey("Location")),
 		resp.Header.Get(http.CanonicalHeaderKey("Docker-Upload-UUID")), nil
@@ -518,12 +514,10 @@ func (c *client) do(req *http.Request) (*http.Response, error) {
 		}
 	}
 	req.Header.Set(http.CanonicalHeaderKey("User-Agent"), UserAgent)
-	fmt.Printf("=======================before the do of client \n")
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("=======================after the do of client \n")
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		defer resp.Body.Close()
 		body, err := ioutil.ReadAll(resp.Body)
