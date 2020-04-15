@@ -16,7 +16,6 @@ package http
 
 import (
 	"bytes"
-	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"io"
@@ -42,17 +41,17 @@ var (
 )
 
 func init() {
-	//secureHTTPTransport = http.DefaultTransport.(*http.Transport).Clone()
-	//insecureHTTPTransport = http.DefaultTransport.(*http.Transport).Clone()
+	secureHTTPTransport = http.DefaultTransport.(*http.Transport).Clone()
+	insecureHTTPTransport = http.DefaultTransport.(*http.Transport).Clone()
 
-	secureHTTPTransport = &http.Transport{}
-	insecureHTTPTransport = &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true,
-		},
-	}
+	//secureHTTPTransport = &http.Transport{}
+	//insecureHTTPTransport = &http.Transport{
+	//	TLSClientConfig: &tls.Config{
+	//		InsecureSkipVerify: true,
+	//	},
+	//}
 
-	//insecureHTTPTransport.TLSClientConfig.InsecureSkipVerify = true
+	insecureHTTPTransport.TLSClientConfig.InsecureSkipVerify = true
 
 	if InternalTLSEnabled() {
 		tlsConfig, err := GetInternalTLSConfig()
