@@ -41,8 +41,12 @@ var (
 )
 
 func init() {
-	secureHTTPTransport = http.DefaultTransport.(*http.Transport).Clone()
-	insecureHTTPTransport = http.DefaultTransport.(*http.Transport).Clone()
+	//secureHTTPTransport = http.DefaultTransport.(*http.Transport).Clone()
+	//insecureHTTPTransport = http.DefaultTransport.(*http.Transport).Clone()
+
+	secureHTTPTransport = &http.Transport{}
+	insecureHTTPTransport = &http.Transport{}
+
 	insecureHTTPTransport.TLSClientConfig.InsecureSkipVerify = true
 
 	if InternalTLSEnabled() {
