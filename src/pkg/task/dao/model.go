@@ -65,3 +65,9 @@ type CheckInData struct {
 	CreationTime time.Time `json:"creation_time" orm:"column(creation_time)"`
 	UpdateTime   time.Time `json:"update_time" orm:"column(update_time)"`
 }
+
+// StatusCount model
+type StatusCount struct {
+	Status string `orm:"column(status)"`
+	Count  int64  `orm:"column(count)"`
+}
