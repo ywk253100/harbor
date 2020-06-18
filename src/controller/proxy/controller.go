@@ -51,9 +51,9 @@ type Controller interface {
 	// UseLocalBlob check if the blob should use local
 	UseLocalBlob(ctx context.Context, p *models.Project, digest string) bool
 	// ProxyBlob proxy the blob request to the target server
-	ProxyBlob(ctx context.Context, p *models.Project, repo string, dig string, w http.ResponseWriter) error
+	ProxyBlob(ctx context.Context, p *models.Project, repo string, dig string, w http.ResponseWriter, r RemoteInterface) error
 	// ProxyManifest proxy the manifest to the target server
-	ProxyManifest(ctx context.Context, p *models.Project, repo string, art lib.ArtifactInfo, w http.ResponseWriter) error
+	ProxyManifest(ctx context.Context, p *models.Project, repo string, art lib.ArtifactInfo, w http.ResponseWriter, r RemoteInterface) error
 }
 
 type controller struct {
@@ -62,7 +62,7 @@ type controller struct {
 	mu          sync.Mutex
 	inflight    map[string]interface{}
 	artifactCtl artifact.Controller
-	local       *Local
+	local       LocalInterface
 }
 
 func (c *controller) isProxyReady(p *models.Project) bool {
@@ -82,7 +82,7 @@ func (c *controller) UseLocalManifest(ctx context.Context, p *models.Project, ar
 		return true
 	}
 	if len(string(art.Digest)) > 0 {
-		exist, err := c.local.blobExist(ctx, art.Digest)
+		exist, err := c.local.BlobExist(ctx, art.Digest)
 		if err == nil && exist {
 			return true
 		}
@@ -94,20 +94,16 @@ func (c *controller) UseLocalBlob(ctx context.Context, p *models.Project, digest
 	if !c.isProxyReady(p) {
 		return true
 	}
-	exist, err := c.local.blobExist(ctx, digest)
+	exist, err := c.local.BlobExist(ctx, digest)
 	if err != nil {
 		return false
 	}
 	return exist
 }
 
-func (c *controller) ProxyManifest(ctx context.Context, p *models.Project, repo string, art lib.ArtifactInfo, w http.ResponseWriter) error {
+func (c *controller) ProxyManifest(ctx context.Context, p *models.Project, repo string, art lib.ArtifactInfo, w http.ResponseWriter, r RemoteInterface) error {
 	var man distribution.Manifest
 	var err error
-	r := &Remote{
-		regID: p.RegistryID,
-	}
-	l := &Local{}
 	if len(string(art.Digest)) > 0 {
 		// pull by digest
 		log.Debugf("Getting manifest by digiest %v", art.Digest)
@@ -123,7 +119,7 @@ func (c *controller) ProxyManifest(ctx context.Context, p *models.Project, repo 
 	if err != nil {
 		if errors.IsNotFoundErr(err) && len(art.Tag) > 0 {
 			go func() {
-				l.cleanupTagInLocal(ctx, repo, string(art.Tag))
+				c.local.CleanupTag(ctx, repo, string(art.Tag))
 			}()
 		}
 		serror.SendError(w, err)
@@ -136,17 +132,14 @@ func (c *controller) ProxyManifest(ctx context.Context, p *models.Project, repo 
 
 	// Push manifest in background
 	go func() {
-		c.waitAndPushManifest(ctx, p, repo, string(art.Tag), man, art, ct)
+		c.waitAndPushManifest(ctx, p, repo, string(art.Tag), man, art, ct, r)
 	}()
 
 	return nil
 }
 
-func (c *controller) ProxyBlob(ctx context.Context, p *models.Project, repo string, dig string, w http.ResponseWriter) error {
+func (c *controller) ProxyBlob(ctx context.Context, p *models.Project, repo string, dig string, w http.ResponseWriter, r RemoteInterface) error {
 	log.Debugf("The blob doesn't exist, proxy the request to the target server, url:%v", repo)
-	r := &Remote{
-		regID: p.RegistryID,
-	}
 	desc, err := r.Blob(w, repo, dig)
 	if err != nil {
 		log.Error(err)
@@ -155,7 +148,7 @@ func (c *controller) ProxyBlob(ctx context.Context, p *models.Project, repo stri
 	}
 	setHeaders(w, desc.Size, desc.MediaType, string(desc.Digest))
 	go func() {
-		err := c.putBlobToLocal(ctx, p, repo, p.Name+"/"+repo, desc)
+		err := c.putBlobToLocal(ctx, p, repo, p.Name+"/"+repo, desc, r)
 		if err != nil {
 			log.Errorf("error while putting blob to local, %v", err)
 		}
@@ -170,13 +163,12 @@ func NewController() Controller {
 		registryMgr: registry.NewDefaultManager(),
 		inflight:    make(map[string]interface{}),
 		artifactCtl: artifact.Ctl,
-		local:       &Local{},
+		local:       CreateLocalInterface(),
 	}
 }
 
-func (c *controller) putBlobToLocal(ctx context.Context, p *models.Project, orgRepo string, localRepo string, desc distribution.Descriptor) error {
+func (c *controller) putBlobToLocal(ctx context.Context, p *models.Project, orgRepo string, localRepo string, desc distribution.Descriptor, r RemoteInterface) error {
 	log.Debugf("Put blob to local registry!, sourceRepo:%v, localRepo:%v, digest: %v", orgRepo, localRepo, desc.Digest)
-	r := &Remote{regID: p.RegistryID}
 	_, bReader, err := r.BlobReader(orgRepo, string(desc.Digest))
 	defer bReader.Close()
 	if err != nil {
@@ -196,7 +188,7 @@ func setHeaders(w http.ResponseWriter, size int64, mediaType string, dig string)
 	w.Header().Set("Etag", dig)
 }
 
-func (c *controller) waitAndPushManifest(ctx context.Context, p *models.Project, repo, tag string, man distribution.Manifest, art lib.ArtifactInfo, contType string) {
+func (c *controller) waitAndPushManifest(ctx context.Context, p *models.Project, repo, tag string, man distribution.Manifest, art lib.ArtifactInfo, contType string, r RemoteInterface) {
 	localRepo := art.ProjectName + "/" + repo
 	if contType == manifestlist.MediaTypeManifestList {
 		err := c.local.PushManifestList(ctx, p, localRepo, tag, art, man)
@@ -216,7 +208,7 @@ func (c *controller) waitAndPushManifest(ctx context.Context, p *models.Project,
 		if n+1 == maxWait && len(waitBlobs) > 0 {
 			log.Debug("Waiting blobs not empty, push it to local repo manually")
 			for _, desc := range waitBlobs {
-				c.putBlobToLocal(ctx, p, repo, localRepo, desc)
+				c.putBlobToLocal(ctx, p, repo, localRepo, desc, r)
 			}
 		}
 	}

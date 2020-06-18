@@ -23,13 +23,30 @@ import (
 	"io"
 )
 
-// Remote defines operations related to remote repository under proxy
-type Remote struct {
+// RemoteInterface defines operations related to remote repository under proxy
+type RemoteInterface interface {
+	// Blob use remote to handler blob request
+	Blob(w io.Writer, repository string, dig string) (distribution.Descriptor, error)
+	// BlobReader create a reader for remote blob
+	BlobReader(orgRepo, dig string) (int64, io.ReadCloser, error)
+	// ManifestByDigest get manifest by digest
+	ManifestByDigest(repository string, dig string) (distribution.Manifest, error)
+	// ManifestByTag get manifest by tag
+	ManifestByTag(repository string, tag string) (distribution.Manifest, error)
+}
+
+// remote defines operations related to remote repository under proxy
+type remote struct {
 	adapter *native.Adapter
 	regID   int64
 }
 
-func (r *Remote) init() error {
+// CreateRemoteInterface create a remote interface
+func CreateRemoteInterface(regID int64) RemoteInterface {
+	return &remote{regID: regID}
+}
+
+func (r *remote) init() error {
 	if r.adapter != nil {
 		return nil
 	}
@@ -41,8 +58,7 @@ func (r *Remote) init() error {
 	return nil
 }
 
-// Blob use remote to handler blob request
-func (r *Remote) Blob(w io.Writer, repository string, dig string) (distribution.Descriptor, error) {
+func (r *remote) Blob(w io.Writer, repository string, dig string) (distribution.Descriptor, error) {
 	d := distribution.Descriptor{}
 	err := r.init()
 	if err != nil {
@@ -65,16 +81,14 @@ func (r *Remote) Blob(w io.Writer, repository string, dig string) (distribution.
 	return d, err
 }
 
-// BlobReader create a reader for remote blob
-func (r *Remote) BlobReader(orgRepo, dig string) (int64, io.ReadCloser, error) {
+func (r *remote) BlobReader(orgRepo, dig string) (int64, io.ReadCloser, error) {
 	if err := r.init(); err != nil {
 		return 0, nil, err
 	}
 	return r.adapter.PullBlob(orgRepo, dig)
 }
 
-// ManifestByDigest get manifest by digest
-func (r *Remote) ManifestByDigest(repository string, dig string) (distribution.Manifest, error) {
+func (r *remote) ManifestByDigest(repository string, dig string) (distribution.Manifest, error) {
 	if err := r.init(); err != nil {
 		return nil, err
 	}
@@ -82,8 +96,7 @@ func (r *Remote) ManifestByDigest(repository string, dig string) (distribution.M
 	return man, err
 }
 
-// ManifestByTag get manifest by tag
-func (r *Remote) ManifestByTag(repository string, tag string) (distribution.Manifest, error) {
+func (r *remote) ManifestByTag(repository string, tag string) (distribution.Manifest, error) {
 	if err := r.init(); err != nil {
 		return nil, err
 	}

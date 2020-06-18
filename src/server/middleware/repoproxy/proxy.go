@@ -51,7 +51,8 @@ func BlobGetMiddleware() func(http.Handler) http.Handler {
 			return
 		}
 		log.Debugf("the blob doesn't exist, proxy the request to the target server, url:%v", repo)
-		err = proxy.Ctl.ProxyBlob(ctx, p, repo, dig, w)
+		remote := proxy.CreateRemoteInterface(p.RegistryID)
+		err = proxy.Ctl.ProxyBlob(ctx, p, repo, dig, w, remote)
 		if err != nil {
 			log.Errorf("failed to proxy the request, error %v", err)
 		}
@@ -76,7 +77,8 @@ func ManifestGetMiddleware() func(http.Handler) http.Handler {
 
 		repo := utils.TrimProxyPrefix(art.ProjectName, art.Repository)
 		log.Debugf("the digest is %v", string(art.Digest))
-		err = proxy.Ctl.ProxyManifest(ctx, p, repo, art, w)
+		remote := proxy.CreateRemoteInterface(p.RegistryID)
+		err = proxy.Ctl.ProxyManifest(ctx, p, repo, art, w, remote)
 		if err != nil {
 			log.Errorf("failed to proxy the manifest, error:%v", err)
 		}

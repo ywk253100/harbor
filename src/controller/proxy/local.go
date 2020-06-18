@@ -35,17 +35,38 @@ var (
 	inflight map[string]interface{} = make(map[string]interface{})
 )
 
-// Local defines operations related to local repo under proxy mode
-type Local struct {
+// LocalInterface defines operations related to local repo under proxy mode
+type LocalInterface interface {
+	// BlobExist check if the blob exist in local repo
+	BlobExist(ctx context.Context, dig string) (bool, error)
+	// PushBlob push blob to local repo
+	PushBlob(ctx context.Context, p *models.Project, localRepo string, desc distribution.Descriptor, bReader io.ReadCloser) error
+	// PushManifest push manifest to local repo
+	PushManifest(ctx context.Context, p *models.Project, repo string, tag string, mfst distribution.Manifest) error
+	// PushManifestList push manifest list to local repo
+	PushManifestList(ctx context.Context, p *models.Project, repo string, tag string, art lib.ArtifactInfo, man distribution.Manifest) error
+	// CheckDependencies check if the manifest's dependency is ready
+	CheckDependencies(ctx context.Context, man distribution.Manifest, dig string, mediaType string) []distribution.Descriptor
+	// CleanupTag cleanup delete tag from local cache
+	CleanupTag(ctx context.Context, repo, tag string)
+}
+
+// local defines operations related to local repo under proxy mode
+type local struct {
 	adapter *base.Adapter
 }
 
+// CreateLocalInterface create the LocalInterface
+func CreateLocalInterface() LocalInterface {
+	return &local{}
+}
+
 // TODO: replace it with head request to local repo
-func (l *Local) blobExist(ctx context.Context, dig string) (bool, error) {
+func (l *local) BlobExist(ctx context.Context, dig string) (bool, error) {
 	return blob.Ctl.Exist(ctx, dig)
 }
 
-func (l *Local) init() error {
+func (l *local) init() error {
 	if l.adapter != nil {
 		return nil
 	}
@@ -62,8 +83,7 @@ func (l *Local) init() error {
 	return err
 }
 
-// PushBlob push blob to local repo
-func (l *Local) PushBlob(ctx context.Context, p *models.Project, localRepo string, desc distribution.Descriptor, bReader io.ReadCloser) error {
+func (l *local) PushBlob(ctx context.Context, p *models.Project, localRepo string, desc distribution.Descriptor, bReader io.ReadCloser) error {
 	log.Debugf("Put blob to local registry!, localRepo:%v, digest: %v", localRepo, desc.Digest)
 	if err := l.init(); err != nil {
 		return err
@@ -72,8 +92,7 @@ func (l *Local) PushBlob(ctx context.Context, p *models.Project, localRepo strin
 	return err
 }
 
-// PushManifest push manifest to local repo
-func (l *Local) PushManifest(ctx context.Context, p *models.Project, repo string, tag string, mfst distribution.Manifest) error {
+func (l *local) PushManifest(ctx context.Context, p *models.Project, repo string, tag string, mfst distribution.Manifest) error {
 	// Make sure there is only one go routing to push current artifact to local repo
 	artifact := repo + ":" + tag
 	mu.Lock()
@@ -98,8 +117,8 @@ func (l *Local) PushManifest(ctx context.Context, p *models.Project, repo string
 	return err
 }
 
-// cleanupTagInLocal cleanup delete tag from local cache
-func (l *Local) cleanupTagInLocal(ctx context.Context, repo, tag string) {
+// CleanupTag cleanup delete tag from local cache
+func (l *local) CleanupTag(ctx context.Context, repo, tag string) {
 	log.Debug("Remove tag from repo if it is exist")
 	// TODO: remove cached tag if it exist in cache
 }
@@ -111,12 +130,12 @@ func releaseLock(artifact string) {
 }
 
 // updateManifestList -- Trim the manifest list, make sure all depend manifests are ready
-func (l *Local) updateManifestList(ctx context.Context, manifest distribution.Manifest) (distribution.Manifest, error) {
+func (l *local) updateManifestList(ctx context.Context, manifest distribution.Manifest) (distribution.Manifest, error) {
 	switch v := manifest.(type) {
 	case *manifestlist.DeserializedManifestList:
 		existMans := make([]manifestlist.ManifestDescriptor, 0)
 		for _, m := range v.Manifests {
-			exist, err := l.blobExist(ctx, string(m.Digest))
+			exist, err := l.BlobExist(ctx, string(m.Digest))
 			if err != nil {
 				continue
 			}
@@ -132,8 +151,7 @@ func (l *Local) updateManifestList(ctx context.Context, manifest distribution.Ma
 	return manifest, nil
 }
 
-// PushManifestList push manifest list to local repo
-func (l *Local) PushManifestList(ctx context.Context, p *models.Project, repo string, tag string, art lib.ArtifactInfo, man distribution.Manifest) error {
+func (l *local) PushManifestList(ctx context.Context, p *models.Project, repo string, tag string, art lib.ArtifactInfo, man distribution.Manifest) error {
 	// Make sure all depend manifests are pushed to local repo
 	time.Sleep(manifestListWaitSec * time.Second)
 	newMan, err := l.updateManifestList(ctx, man)
@@ -143,13 +161,12 @@ func (l *Local) PushManifestList(ctx context.Context, p *models.Project, repo st
 	return l.PushManifest(ctx, p, repo, tag, newMan)
 }
 
-// CheckDependencies check if the manifest's dependency is ready
-func (l *Local) CheckDependencies(ctx context.Context, man distribution.Manifest, dig string, mediaType string) []distribution.Descriptor {
+func (l *local) CheckDependencies(ctx context.Context, man distribution.Manifest, dig string, mediaType string) []distribution.Descriptor {
 	descriptors := man.References()
 	waitDesc := make([]distribution.Descriptor, 0)
 	for _, desc := range descriptors {
 		log.Debugf("checking the blob dependency: %v", desc.Digest)
-		exist, err := l.blobExist(ctx, string(desc.Digest))
+		exist, err := l.BlobExist(ctx, string(desc.Digest))
 		if err != nil || !exist {
 			log.Debugf("Check dependency failed!")
 			waitDesc = append(waitDesc, desc)
