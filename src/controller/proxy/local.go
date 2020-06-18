@@ -35,6 +35,7 @@ var (
 	inflight map[string]interface{} = make(map[string]interface{})
 )
 
+// Local defines operations related to local repo under proxy mode
 type Local struct {
 	adapter *base.Adapter
 }
@@ -61,6 +62,7 @@ func (l *Local) init() error {
 	return err
 }
 
+// PushBlob push blob to local repo
 func (l *Local) PushBlob(ctx context.Context, p *models.Project, localRepo string, desc distribution.Descriptor, bReader io.ReadCloser) error {
 	log.Debugf("Put blob to local registry!, localRepo:%v, digest: %v", localRepo, desc.Digest)
 	if err := l.init(); err != nil {
@@ -70,6 +72,7 @@ func (l *Local) PushBlob(ctx context.Context, p *models.Project, localRepo strin
 	return err
 }
 
+// PushManifest push manifest to local repo
 func (l *Local) PushManifest(ctx context.Context, p *models.Project, repo string, tag string, mfst distribution.Manifest) error {
 	// Make sure there is only one go routing to push current artifact to local repo
 	artifact := repo + ":" + tag

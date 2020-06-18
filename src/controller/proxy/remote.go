@@ -23,6 +23,7 @@ import (
 	"io"
 )
 
+// Remote defines operations related to remote repository under proxy
 type Remote struct {
 	adapter *native.Adapter
 	regID   int64

@@ -44,6 +44,7 @@ var (
 	Ctl = NewController()
 )
 
+// Controller defines the operations related with pull through proxy
 type Controller interface {
 	// UseLocalManifest check if the manifest should use local
 	UseLocalManifest(ctx context.Context, p *models.Project, art lib.ArtifactInfo) bool
