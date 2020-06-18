@@ -26,6 +26,7 @@ import (
 	"github.com/goharbor/harbor/src/server/middleware"
 )
 
+// BlobGetMiddleware handle get blob request
 func BlobGetMiddleware() func(http.Handler) http.Handler {
 	return middleware.New(func(w http.ResponseWriter, r *http.Request, next http.Handler) {
 		log.Debugf("Request url is %v", r.URL)
