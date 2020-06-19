@@ -84,7 +84,7 @@ func (l *local) init() error {
 }
 
 func (l *local) PushBlob(ctx context.Context, p *models.Project, localRepo string, desc distribution.Descriptor, bReader io.ReadCloser) error {
-	log.Debugf("Put blob to local registry!, localRepo:%v, digest: %v", localRepo, desc.Digest)
+	log.Debugf("Put blob to local registry, localRepo:%v, digest: %v", localRepo, desc.Digest)
 	if err := l.init(); err != nil {
 		return err
 	}
