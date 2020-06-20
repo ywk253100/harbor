@@ -28,6 +28,8 @@ import (
 	"github.com/goharbor/harbor/src/replication/model"
 	"github.com/goharbor/harbor/src/replication/registry"
 	serror "github.com/goharbor/harbor/src/server/error"
+	"github.com/opencontainers/go-digest"
+	"io"
 	"net/http"
 	"sync"
 	"time"
@@ -119,7 +121,7 @@ func (c *controller) ProxyManifest(ctx context.Context, p *models.Project, repo 
 	if err != nil {
 		if errors.IsNotFoundErr(err) && len(art.Tag) > 0 {
 			go func() {
-				c.local.CleanupTag(ctx, repo, string(art.Tag))
+				c.local.DeleteManifest(ctx, repo, string(art.Tag))
 			}()
 		}
 		serror.SendError(w, err)
@@ -140,13 +142,22 @@ func (c *controller) ProxyManifest(ctx context.Context, p *models.Project, repo 
 
 func (c *controller) ProxyBlob(ctx context.Context, p *models.Project, repo string, dig string, w http.ResponseWriter, r RemoteInterface) error {
 	log.Debugf("The blob doesn't exist, proxy the request to the target server, url:%v", repo)
-	desc, err := r.Blob(w, repo, dig)
+	desc := distribution.Descriptor{}
+	size, bReader, err := r.BlobReader(repo, dig)
+	defer bReader.Close()
 	if err != nil {
-		log.Error(err)
-		serror.SendError(w, err)
+		log.Errorf("failed to pull blob, error %v", err)
 		return err
 	}
-	setHeaders(w, desc.Size, desc.MediaType, string(desc.Digest))
+	written, err := io.CopyN(w, bReader, size)
+	if written != size {
+		e := errors.Errorf("The size mismatch, actual:%d, expected: %d", written, size)
+		return e
+	}
+	desc.Size = size
+	desc.Digest = digest.Digest(dig)
+
+	setHeaders(w, size, desc.MediaType, dig)
 	go func() {
 		err := c.putBlobToLocal(ctx, p, repo, p.Name+"/"+repo, desc, r)
 		if err != nil {

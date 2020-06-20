@@ -16,17 +16,13 @@ package proxy
 
 import (
 	"github.com/docker/distribution"
-	"github.com/goharbor/harbor/src/lib/log"
 	"github.com/goharbor/harbor/src/replication/adapter"
 	"github.com/goharbor/harbor/src/replication/registry"
-	"github.com/opencontainers/go-digest"
 	"io"
 )
 
 // RemoteInterface defines operations related to remote repository under proxy
 type RemoteInterface interface {
-	// Blob use remote to handler blob request
-	Blob(w io.Writer, repository string, dig string) (distribution.Descriptor, error)
 	// BlobReader create a reader for remote blob
 	BlobReader(orgRepo, dig string) (int64, io.ReadCloser, error)
 	// ManifestByDigest get manifest by digest
@@ -62,29 +58,6 @@ func (r *remote) init() error {
 	}
 	r.registry = adp.(adapter.ArtifactRegistry)
 	return nil
-}
-
-func (r *remote) Blob(w io.Writer, repository string, dig string) (distribution.Descriptor, error) {
-	d := distribution.Descriptor{}
-	err := r.init()
-	if err != nil {
-		return d, err
-	}
-	size, bReader, err := r.registry.PullBlob(repository, dig)
-	defer bReader.Close()
-	if err != nil {
-		log.Error(err)
-	}
-	written, err := io.CopyN(w, bReader, size)
-	if err != nil {
-		log.Error(err)
-	}
-	if written != size {
-		log.Errorf("The size mismatch, actual:%d, expected: %d", written, size)
-	}
-	d.Size = size
-	d.Digest = digest.Digest(dig)
-	return d, err
 }
 
 func (r *remote) BlobReader(orgRepo, dig string) (int64, io.ReadCloser, error) {

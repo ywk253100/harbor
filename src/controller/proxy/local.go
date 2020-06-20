@@ -47,8 +47,8 @@ type LocalInterface interface {
 	PushManifestList(ctx context.Context, p *models.Project, repo string, tag string, art lib.ArtifactInfo, man distribution.Manifest) error
 	// CheckDependencies check if the manifest's dependency is ready
 	CheckDependencies(ctx context.Context, man distribution.Manifest, dig string, mediaType string) []distribution.Descriptor
-	// CleanupTag cleanup delete tag from local cache
-	CleanupTag(ctx context.Context, repo, tag string)
+	// DeleteManifest cleanup delete tag from local cache
+	DeleteManifest(ctx context.Context, repo, ref string)
 }
 
 // local defines operations related to local repo under proxy mode
@@ -121,8 +121,8 @@ func (l *local) PushManifest(ctx context.Context, p *models.Project, repo string
 	return err
 }
 
-// CleanupTag cleanup delete tag from local cache
-func (l *local) CleanupTag(ctx context.Context, repo, tag string) {
+// DeleteManifest cleanup delete tag from local cache
+func (l *local) DeleteManifest(ctx context.Context, repo, ref string) {
 	log.Debug("Remove tag from repo if it is exist")
 	// TODO: remove cached tag if it exist in cache
 }
