@@ -17,7 +17,7 @@ package proxy
 import (
 	"github.com/docker/distribution"
 	"github.com/goharbor/harbor/src/lib/log"
-	"github.com/goharbor/harbor/src/replication/adapter/native"
+	"github.com/goharbor/harbor/src/replication/adapter"
 	"github.com/goharbor/harbor/src/replication/registry"
 	"github.com/opencontainers/go-digest"
 	"io"
@@ -37,8 +37,8 @@ type RemoteInterface interface {
 
 // remote defines operations related to remote repository under proxy
 type remote struct {
-	adapter *native.Adapter
-	regID   int64
+	regID    int64
+	registry adapter.ArtifactRegistry
 }
 
 // CreateRemoteInterface create a remote interface
@@ -47,14 +47,20 @@ func CreateRemoteInterface(regID int64) RemoteInterface {
 }
 
 func (r *remote) init() error {
-	if r.adapter != nil {
+
+	if r.registry != nil {
 		return nil
 	}
 	reg, err := registry.NewDefaultManager().Get(r.regID)
+	factory, err := adapter.GetFactory(reg.Type)
 	if err != nil {
 		return err
 	}
-	r.adapter = native.NewAdapter(reg)
+	adp, err := factory.Create(reg)
+	if err != nil {
+		return err
+	}
+	r.registry = adp.(adapter.ArtifactRegistry)
 	return nil
 }
 
@@ -64,7 +70,7 @@ func (r *remote) Blob(w io.Writer, repository string, dig string) (distribution.
 	if err != nil {
 		return d, err
 	}
-	size, bReader, err := r.adapter.PullBlob(repository, dig)
+	size, bReader, err := r.registry.PullBlob(repository, dig)
 	defer bReader.Close()
 	if err != nil {
 		log.Error(err)
@@ -85,14 +91,14 @@ func (r *remote) BlobReader(orgRepo, dig string) (int64, io.ReadCloser, error) {
 	if err := r.init(); err != nil {
 		return 0, nil, err
 	}
-	return r.adapter.PullBlob(orgRepo, dig)
+	return r.registry.PullBlob(orgRepo, dig)
 }
 
 func (r *remote) ManifestByDigest(repository string, dig string) (distribution.Manifest, error) {
 	if err := r.init(); err != nil {
 		return nil, err
 	}
-	man, dig, err := r.adapter.PullManifest(repository, dig)
+	man, dig, err := r.registry.PullManifest(repository, dig)
 	return man, err
 }
 
@@ -100,6 +106,6 @@ func (r *remote) ManifestByTag(repository string, tag string) (distribution.Mani
 	if err := r.init(); err != nil {
 		return nil, err
 	}
-	man, _, err := r.adapter.PullManifest(repository, tag)
+	man, _, err := r.registry.PullManifest(repository, tag)
 	return man, err
 }

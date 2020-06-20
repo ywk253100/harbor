@@ -94,6 +94,10 @@ func (l *local) PushBlob(ctx context.Context, p *models.Project, localRepo strin
 
 func (l *local) PushManifest(ctx context.Context, p *models.Project, repo string, tag string, mfst distribution.Manifest) error {
 	// Make sure there is only one go routing to push current artifact to local repo
+	if len(tag) == 0 {
+		// if tag is empty, set to latest
+		tag = "latest"
+	}
 	artifact := repo + ":" + tag
 	mu.Lock()
 	_, ok := inflight[artifact]

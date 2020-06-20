@@ -22,7 +22,6 @@ import (
 	"github.com/goharbor/harbor/src/controller/proxy"
 	"github.com/goharbor/harbor/src/lib"
 	"github.com/goharbor/harbor/src/lib/log"
-	"github.com/goharbor/harbor/src/pkg/distribution"
 	"github.com/goharbor/harbor/src/server/middleware"
 )
 
@@ -31,30 +30,25 @@ func BlobGetMiddleware() func(http.Handler) http.Handler {
 	return middleware.New(func(w http.ResponseWriter, r *http.Request, next http.Handler) {
 		log.Debugf("Request url is %v", r.URL)
 		urlStr := r.URL.String()
-		if !middleware.V2BlobURLRe.MatchString(urlStr) || r.Method != http.MethodGet {
-			next.ServeHTTP(w, r)
-			return
-		}
-
 		log.Debugf("getting blob with url: %v\n", urlStr)
 		ctx := r.Context()
-		pName := distribution.ParseProjectName(urlStr)
-		dig := utils.ParseDigest(urlStr)
-		repo := utils.ParseRepo(urlStr)
-		repo = utils.TrimProxyPrefix(pName, repo)
-		p, err := project.Ctl.GetByName(ctx, pName, project.Metadata(false))
+		art := lib.GetArtifactInfo(ctx)
+		repo := utils.TrimProxyPrefix(art.ProjectName, art.Repository)
+		p, err := project.Ctl.GetByName(ctx, art.ProjectName, project.Metadata(false))
 		if err != nil {
 			log.Errorf("failed to get project, error:%v", err)
 		}
-		if proxy.Ctl.UseLocalBlob(ctx, p, dig) {
+		if proxy.Ctl.UseLocalBlob(ctx, p, art.Digest) {
 			next.ServeHTTP(w, r)
 			return
 		}
 		log.Debugf("the blob doesn't exist, proxy the request to the target server, url:%v", repo)
 		remote := proxy.CreateRemoteInterface(p.RegistryID)
-		err = proxy.Ctl.ProxyBlob(ctx, p, repo, dig, w, remote)
+		err = proxy.Ctl.ProxyBlob(ctx, p, repo, art.Digest, w, remote)
 		if err != nil {
 			log.Errorf("failed to proxy the request, error %v", err)
+			next.ServeHTTP(w, r)
+			return
 		}
 		return
 	})
@@ -68,6 +62,8 @@ func ManifestGetMiddleware() func(http.Handler) http.Handler {
 		p, err := project.Ctl.GetByName(ctx, art.ProjectName)
 		if err != nil {
 			log.Error(err)
+			next.ServeHTTP(w, r)
+			return
 		}
 
 		if proxy.Ctl.UseLocalManifest(ctx, p, art) {
@@ -81,6 +77,8 @@ func ManifestGetMiddleware() func(http.Handler) http.Handler {
 		err = proxy.Ctl.ProxyManifest(ctx, p, repo, art, w, remote)
 		if err != nil {
 			log.Errorf("failed to proxy the manifest, error:%v", err)
+			next.ServeHTTP(w, r)
+			return
 		}
 	})
 }

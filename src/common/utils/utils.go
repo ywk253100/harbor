@@ -303,25 +303,3 @@ func TrimProxyPrefix(projectName, repo string) string {
 	}
 	return repo
 }
-
-// ParseRepo parse the repo name from request url
-func ParseRepo(url string) string {
-	u := strings.TrimPrefix(url, "/v2/")
-	i := strings.LastIndex(u, "/blobs/")
-	if i <= 0 {
-		return url
-	}
-	return u[0:i]
-}
-
-// ParseDigest parse the digest
-func ParseDigest(url string) string {
-	if strings.Index(url, "sha256:") < 0 {
-		return ""
-	}
-	parts := strings.Split(url, ":")
-	if len(parts) == 2 {
-		return "sha256:" + parts[1]
-	}
-	return ""
-}

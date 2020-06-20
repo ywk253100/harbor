@@ -32,7 +32,6 @@ import (
 func RegisterRoutes() {
 	root := router.NewRoute().
 		Path("/v2").
-		Middleware(repoproxy.BlobGetMiddleware()).
 		Middleware(artifactinfo.Middleware()).
 		Middleware(v2auth.Middleware())
 	// catalog
@@ -69,6 +68,12 @@ func RegisterRoutes() {
 		Middleware(quota.PutManifestMiddleware()).
 		Middleware(blob.PutManifestMiddleware()).
 		HandlerFunc(putManifest)
+	// blob get
+	root.NewRoute().
+		Method(http.MethodGet).
+		Path("/*/blobs/:digest").
+		Middleware(repoproxy.BlobGetMiddleware()).
+		Handler(proxy)
 	// initiate blob upload
 	root.NewRoute().
 		Method(http.MethodPost).
