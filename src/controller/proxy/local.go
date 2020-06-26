@@ -23,7 +23,9 @@ import (
 	"github.com/goharbor/harbor/src/core/config"
 	"github.com/goharbor/harbor/src/lib"
 	"github.com/goharbor/harbor/src/lib/log"
+	"github.com/goharbor/harbor/src/replication/adapter"
 	"github.com/goharbor/harbor/src/replication/adapter/harbor/base"
+	"github.com/goharbor/harbor/src/replication/adapter/harbor/v2"
 	"github.com/goharbor/harbor/src/replication/model"
 	"io"
 	"sync"
@@ -53,7 +55,8 @@ type LocalInterface interface {
 
 // local defines operations related to local repo under proxy mode
 type local struct {
-	adapter *base.Adapter
+	registry adapter.ArtifactRegistry
+	//adapter *base.Adapter
 }
 
 // CreateLocalInterface create the LocalInterface
@@ -67,7 +70,7 @@ func (l *local) BlobExist(ctx context.Context, dig string) (bool, error) {
 }
 
 func (l *local) init() error {
-	if l.adapter != nil {
+	if l.registry != nil {
 		return nil
 	}
 	registryURL := config.GetCoreURL()
@@ -78,8 +81,12 @@ func (l *local) init() error {
 			AccessSecret: config.ProxyServiceSecret,
 		},
 	}
-	adapter, err := base.New(reg)
-	l.adapter = adapter
+	baseAdapter, err := base.New(reg)
+	if err != nil {
+		return err
+	}
+	adpt := v2.New(baseAdapter)
+	l.registry = adpt.(adapter.ArtifactRegistry)
 	return err
 }
 
@@ -88,7 +95,7 @@ func (l *local) PushBlob(ctx context.Context, p *models.Project, localRepo strin
 	if err := l.init(); err != nil {
 		return err
 	}
-	err := l.adapter.PushBlob(localRepo, string(desc.Digest), desc.Size, bReader)
+	err := l.registry.PushBlob(localRepo, string(desc.Digest), desc.Size, bReader)
 	return err
 }
 
@@ -117,7 +124,7 @@ func (l *local) PushManifest(ctx context.Context, p *models.Project, repo string
 	if err != nil {
 		return err
 	}
-	_, err = l.adapter.PushManifest(repo, tag, mediaType, payload)
+	_, err = l.registry.PushManifest(repo, tag, mediaType, payload)
 	return err
 }
 

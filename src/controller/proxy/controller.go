@@ -108,7 +108,7 @@ func (c *controller) ProxyManifest(ctx context.Context, p *models.Project, repo 
 	var err error
 	if len(string(art.Digest)) > 0 {
 		// pull by digest
-		log.Debugf("Getting manifest by digiest %v", art.Digest)
+		log.Debugf("Getting manifest by digest %v", art.Digest)
 		man, err = r.ManifestByDigest(repo, string(art.Digest))
 	} else { // pull by tag
 		if len(art.Tag) == 0 {
@@ -144,11 +144,11 @@ func (c *controller) ProxyBlob(ctx context.Context, p *models.Project, repo stri
 	log.Debugf("The blob doesn't exist, proxy the request to the target server, url:%v", repo)
 	desc := distribution.Descriptor{}
 	size, bReader, err := r.BlobReader(repo, dig)
-	defer bReader.Close()
 	if err != nil {
 		log.Errorf("failed to pull blob, error %v", err)
 		return err
 	}
+	defer bReader.Close()
 	written, err := io.CopyN(w, bReader, size)
 	if written != size {
 		e := errors.Errorf("The size mismatch, actual:%d, expected: %d", written, size)
@@ -181,11 +181,11 @@ func NewController() Controller {
 func (c *controller) putBlobToLocal(ctx context.Context, p *models.Project, orgRepo string, localRepo string, desc distribution.Descriptor, r RemoteInterface) error {
 	log.Debugf("Put blob to local registry!, sourceRepo:%v, localRepo:%v, digest: %v", orgRepo, localRepo, desc.Digest)
 	_, bReader, err := r.BlobReader(orgRepo, string(desc.Digest))
-	defer bReader.Close()
 	if err != nil {
 		log.Error(err)
 		return err
 	}
+	defer bReader.Close()
 	err = c.local.PushBlob(ctx, p, localRepo, desc, bReader)
 	return err
 }
