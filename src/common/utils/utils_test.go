@@ -432,33 +432,3 @@ func TestIsDigest(t *testing.T) {
 	assert.False(IsDigest("latest"))
 	assert.True(IsDigest("sha256:1359608115b94599e5641638bac5aef1ddfaa79bb96057ebf41ebc8d33acf8a7"))
 }
-
-func TestTrimProxyPrefix(t *testing.T) {
-	type args struct {
-		project string
-		repo    string
-	}
-	cases := []struct {
-		name string
-		in   args
-		want string
-	}{
-		{
-			name: `normal test`,
-			in:   args{"dockerhub_proxy", "dockerhub_proxy/firstfloor/hello-world"},
-			want: "firstfloor/hello-world",
-		},
-	}
-
-	for _, tt := range cases {
-		t.Run(tt.name, func(t *testing.T) {
-
-			got := TrimProxyPrefix(tt.in.project, tt.in.repo)
-
-			if got != tt.want {
-				t.Errorf(`(%v) = %v; want "%v"`, tt.in, got, tt.want)
-			}
-
-		})
-	}
-}

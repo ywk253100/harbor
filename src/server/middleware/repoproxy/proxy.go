@@ -17,8 +17,8 @@ package repoproxy
 import (
 	serror "github.com/goharbor/harbor/src/server/error"
 	"net/http"
+	"strings"
 
-	"github.com/goharbor/harbor/src/common/utils"
 	"github.com/goharbor/harbor/src/controller/project"
 	"github.com/goharbor/harbor/src/controller/proxy"
 	"github.com/goharbor/harbor/src/lib"
@@ -34,7 +34,7 @@ func BlobGetMiddleware() func(http.Handler) http.Handler {
 		log.Debugf("getting blob with url: %v\n", urlStr)
 		ctx := r.Context()
 		art := lib.GetArtifactInfo(ctx)
-		repo := utils.TrimProxyPrefix(art.ProjectName, art.Repository)
+		repo := trimProxyPrefix(art.ProjectName, art.Repository)
 		p, err := project.Ctl.GetByName(ctx, art.ProjectName, project.Metadata(false))
 		if err != nil {
 			log.Errorf("failed to get project, error:%v", err)
@@ -73,7 +73,7 @@ func ManifestGetMiddleware() func(http.Handler) http.Handler {
 			return
 		}
 
-		repo := utils.TrimProxyPrefix(art.ProjectName, art.Repository)
+		repo := trimProxyPrefix(art.ProjectName, art.Repository)
 		log.Debugf("the digest is %v", string(art.Digest))
 		remote := proxy.CreateRemoteInterface(p.RegistryID)
 		err = proxy.ControllerInstance().ProxyManifest(ctx, p, repo, art, w, remote)
@@ -83,4 +83,11 @@ func ManifestGetMiddleware() func(http.Handler) http.Handler {
 			return
 		}
 	})
+}
+
+func trimProxyPrefix(projectName, repo string) string {
+	if strings.HasPrefix(repo, projectName+"/") {
+		return strings.TrimPrefix(repo, projectName+"/")
+	}
+	return repo
 }

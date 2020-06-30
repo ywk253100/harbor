@@ -295,11 +295,3 @@ func FindNamedMatches(regex *regexp.Regexp, str string) map[string]string {
 	}
 	return results
 }
-
-// TrimProxyPrefix remove proxy prefix from original original project name
-func TrimProxyPrefix(projectName, repo string) string {
-	if strings.HasPrefix(repo, projectName+"/") {
-		return strings.TrimPrefix(repo, projectName+"/")
-	}
-	return repo
-}
