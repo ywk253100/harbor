@@ -15,6 +15,7 @@
 package repoproxy
 
 import (
+	serror "github.com/goharbor/harbor/src/server/error"
 	"net/http"
 
 	"github.com/goharbor/harbor/src/common/utils"
@@ -37,6 +38,7 @@ func BlobGetMiddleware() func(http.Handler) http.Handler {
 		p, err := project.Ctl.GetByName(ctx, art.ProjectName, project.Metadata(false))
 		if err != nil {
 			log.Errorf("failed to get project, error:%v", err)
+			serror.SendError(w, err)
 		}
 		if proxy.Ctl.UseLocalBlob(ctx, p, art.Digest) {
 			next.ServeHTTP(w, r)
@@ -47,7 +49,7 @@ func BlobGetMiddleware() func(http.Handler) http.Handler {
 		err = proxy.Ctl.ProxyBlob(ctx, p, repo, art.Digest, w, remote)
 		if err != nil {
 			log.Errorf("failed to proxy the request, error %v", err)
-			next.ServeHTTP(w, r)
+			serror.SendError(w, err)
 			return
 		}
 		return
@@ -62,7 +64,7 @@ func ManifestGetMiddleware() func(http.Handler) http.Handler {
 		p, err := project.Ctl.GetByName(ctx, art.ProjectName)
 		if err != nil {
 			log.Error(err)
-			next.ServeHTTP(w, r)
+			serror.SendError(w, err)
 			return
 		}
 
@@ -77,7 +79,7 @@ func ManifestGetMiddleware() func(http.Handler) http.Handler {
 		err = proxy.Ctl.ProxyManifest(ctx, p, repo, art, w, remote)
 		if err != nil {
 			log.Errorf("failed to proxy the manifest, error:%v", err)
-			next.ServeHTTP(w, r)
+			serror.SendError(w, err)
 			return
 		}
 	})

@@ -25,10 +25,8 @@ import (
 type RemoteInterface interface {
 	// BlobReader create a reader for remote blob
 	BlobReader(orgRepo, dig string) (int64, io.ReadCloser, error)
-	// ManifestByDigest get manifest by digest
-	ManifestByDigest(repository string, dig string) (distribution.Manifest, error)
-	// ManifestByTag get manifest by tag
-	ManifestByTag(repository string, tag string) (distribution.Manifest, error)
+	// Manifest get manifest by reference
+	Manifest(repository string, dig string) (distribution.Manifest, error)
 }
 
 // remote defines operations related to remote repository under proxy
@@ -67,18 +65,10 @@ func (r *remote) BlobReader(orgRepo, dig string) (int64, io.ReadCloser, error) {
 	return r.registry.PullBlob(orgRepo, dig)
 }
 
-func (r *remote) ManifestByDigest(repository string, dig string) (distribution.Manifest, error) {
+func (r *remote) Manifest(repository string, ref string) (distribution.Manifest, error) {
 	if err := r.init(); err != nil {
 		return nil, err
 	}
-	man, dig, err := r.registry.PullManifest(repository, dig)
-	return man, err
-}
-
-func (r *remote) ManifestByTag(repository string, tag string) (distribution.Manifest, error) {
-	if err := r.init(); err != nil {
-		return nil, err
-	}
-	man, _, err := r.registry.PullManifest(repository, tag)
+	man, _, err := r.registry.PullManifest(repository, ref)
 	return man, err
 }

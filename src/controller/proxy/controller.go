@@ -27,7 +27,6 @@ import (
 	"github.com/goharbor/harbor/src/lib/log"
 	"github.com/goharbor/harbor/src/replication/model"
 	"github.com/goharbor/harbor/src/replication/registry"
-	serror "github.com/goharbor/harbor/src/server/error"
 	"github.com/opencontainers/go-digest"
 	"io"
 	"net/http"
@@ -106,25 +105,20 @@ func (c *controller) UseLocalBlob(ctx context.Context, p *models.Project, digest
 func (c *controller) ProxyManifest(ctx context.Context, p *models.Project, repo string, art lib.ArtifactInfo, w http.ResponseWriter, r RemoteInterface) error {
 	var man distribution.Manifest
 	var err error
-	if len(string(art.Digest)) > 0 {
-		// pull by digest
-		log.Debugf("Getting manifest by digest %v", art.Digest)
-		man, err = r.ManifestByDigest(repo, string(art.Digest))
-	} else { // pull by tag
-		if len(art.Tag) == 0 {
-			art.Tag = "latest"
-		}
-		log.Debugf("Getting manifest by tag %v", art.Tag)
-		man, err = r.ManifestByTag(repo, string(art.Tag))
+	ref := string(art.Digest)
+	if len(ref) == 0 {
+		ref = art.Tag
 	}
-
+	if len(ref) == 0 {
+		ref = "latest"
+	}
+	man, err = r.Manifest(repo, ref)
 	if err != nil {
-		if errors.IsNotFoundErr(err) && len(art.Tag) > 0 {
+		if errors.IsNotFoundErr(err) {
 			go func() {
 				c.local.DeleteManifest(ctx, repo, string(art.Tag))
 			}()
 		}
-		serror.SendError(w, err)
 		return err
 	}
 
@@ -223,7 +217,7 @@ func (c *controller) waitAndPushManifest(ctx context.Context, p *models.Project,
 			}
 		}
 	}
-	err := c.local.PushManifest(ctx, p, localRepo, tag, man)
+	err := c.local.PushManifest(ctx, p, localRepo, art.Tag, man)
 	if err != nil {
 		log.Errorf("failed to push manifest, error %v", err)
 	}
