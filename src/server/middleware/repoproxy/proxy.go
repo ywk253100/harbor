@@ -78,7 +78,6 @@ func ManifestGetMiddleware() func(http.Handler) http.Handler {
 		remote := proxy.CreateRemoteInterface(p.RegistryID)
 		err = proxy.ControllerInstance().ProxyManifest(ctx, p, repo, art, w, remote)
 		if err != nil {
-			log.Errorf("failed to proxy the manifest, error:%v", err)
 			serror.SendError(w, err)
 			return
 		}
