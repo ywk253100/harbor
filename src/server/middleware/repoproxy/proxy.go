@@ -37,7 +37,6 @@ func BlobGetMiddleware() func(http.Handler) http.Handler {
 		repo := trimProxyPrefix(art.ProjectName, art.Repository)
 		p, err := project.Ctl.GetByName(ctx, art.ProjectName, project.Metadata(false))
 		if err != nil {
-			log.Errorf("failed to get project, error:%v", err)
 			serror.SendError(w, err)
 		}
 		if proxy.ControllerInstance().UseLocal(ctx, p, art) {
@@ -48,7 +47,6 @@ func BlobGetMiddleware() func(http.Handler) http.Handler {
 		remote := proxy.CreateRemoteInterface(p.RegistryID)
 		err = proxy.ControllerInstance().ProxyBlob(ctx, p, repo, art.Digest, w, remote)
 		if err != nil {
-			log.Errorf("failed to proxy the request, error %v", err)
 			serror.SendError(w, err)
 			return
 		}
@@ -63,7 +61,6 @@ func ManifestGetMiddleware() func(http.Handler) http.Handler {
 		art := lib.GetArtifactInfo(ctx)
 		p, err := project.Ctl.GetByName(ctx, art.ProjectName)
 		if err != nil {
-			log.Error(err)
 			serror.SendError(w, err)
 			return
 		}
