@@ -15,10 +15,13 @@
 package repoproxy
 
 import (
+	"github.com/goharbor/harbor/src/replication/model"
+	"github.com/goharbor/harbor/src/replication/registry"
 	serror "github.com/goharbor/harbor/src/server/error"
 	"net/http"
 	"strings"
 
+	"github.com/goharbor/harbor/src/common/models"
 	"github.com/goharbor/harbor/src/controller/project"
 	"github.com/goharbor/harbor/src/controller/proxy"
 	"github.com/goharbor/harbor/src/lib"
@@ -34,18 +37,19 @@ func BlobGetMiddleware() func(http.Handler) http.Handler {
 		log.Debugf("getting blob with url: %v\n", urlStr)
 		ctx := r.Context()
 		art := lib.GetArtifactInfo(ctx)
-		repo := trimProxyPrefix(art.ProjectName, art.Repository)
 		p, err := project.Ctl.GetByName(ctx, art.ProjectName, project.Metadata(false))
 		if err != nil {
 			serror.SendError(w, err)
 			return
 		}
-		if proxy.ControllerInstance().UseLocal(ctx, p, art) {
+
+		if isProxyReady(p) == false || proxy.ControllerInstance().UseLocal(ctx, p, art) {
 			next.ServeHTTP(w, r)
 			return
 		}
-		log.Debugf("the blob doesn't exist, proxy the request to the target server, url:%v", repo)
 		remote := proxy.CreateRemoteInterface(p.RegistryID)
+		repo := trimProxyPrefix(art.ProjectName, art.Repository)
+		log.Debugf("the blob doesn't exist, proxy the request to the target server, url:%v", repo)
 		err = proxy.ControllerInstance().ProxyBlob(ctx, p, repo, art.Digest, w, remote)
 		if err != nil {
 			serror.SendError(w, err)
@@ -66,7 +70,7 @@ func ManifestGetMiddleware() func(http.Handler) http.Handler {
 			return
 		}
 
-		if proxy.ControllerInstance().UseLocal(ctx, p, art) {
+		if isProxyReady(p) == false || proxy.ControllerInstance().UseLocal(ctx, p, art) {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -87,4 +91,16 @@ func trimProxyPrefix(projectName, repo string) string {
 		return strings.TrimPrefix(repo, projectName+"/")
 	}
 	return repo
+}
+
+func isProxyReady(p *models.Project) bool {
+	if p.RegistryID < 1 {
+		return false
+	}
+	reg, err := registry.NewDefaultManager().Get(p.RegistryID)
+	if err != nil {
+		log.Errorf("failed to get registry, error:%v", err)
+		return false
+	}
+	return reg.Status == model.Healthy
 }

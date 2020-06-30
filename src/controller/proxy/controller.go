@@ -89,9 +89,6 @@ func (c *controller) isProxyReady(p *models.Project) bool {
 }
 
 func (c *controller) UseLocal(ctx context.Context, p *models.Project, art lib.ArtifactInfo) bool {
-	if !c.isProxyReady(p) {
-		return true
-	}
 	if len(string(art.Digest)) > 0 {
 		exist, err := c.local.BlobExist(ctx, art.Digest)
 		if err == nil && exist {
