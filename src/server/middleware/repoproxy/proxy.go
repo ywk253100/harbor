@@ -38,6 +38,7 @@ func BlobGetMiddleware() func(http.Handler) http.Handler {
 		p, err := project.Ctl.GetByName(ctx, art.ProjectName, project.Metadata(false))
 		if err != nil {
 			serror.SendError(w, err)
+			return
 		}
 		if proxy.ControllerInstance().UseLocal(ctx, p, art) {
 			next.ServeHTTP(w, r)
