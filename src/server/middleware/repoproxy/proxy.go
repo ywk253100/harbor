@@ -40,13 +40,13 @@ func BlobGetMiddleware() func(http.Handler) http.Handler {
 			log.Errorf("failed to get project, error:%v", err)
 			serror.SendError(w, err)
 		}
-		if proxy.Ctl.UseLocalBlob(ctx, p, art.Digest) {
+		if proxy.ControllerInstance().UseLocal(ctx, p, art) {
 			next.ServeHTTP(w, r)
 			return
 		}
 		log.Debugf("the blob doesn't exist, proxy the request to the target server, url:%v", repo)
 		remote := proxy.CreateRemoteInterface(p.RegistryID)
-		err = proxy.Ctl.ProxyBlob(ctx, p, repo, art.Digest, w, remote)
+		err = proxy.ControllerInstance().ProxyBlob(ctx, p, repo, art.Digest, w, remote)
 		if err != nil {
 			log.Errorf("failed to proxy the request, error %v", err)
 			serror.SendError(w, err)
@@ -68,7 +68,7 @@ func ManifestGetMiddleware() func(http.Handler) http.Handler {
 			return
 		}
 
-		if proxy.Ctl.UseLocalManifest(ctx, p, art) {
+		if proxy.ControllerInstance().UseLocal(ctx, p, art) {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -76,7 +76,7 @@ func ManifestGetMiddleware() func(http.Handler) http.Handler {
 		repo := utils.TrimProxyPrefix(art.ProjectName, art.Repository)
 		log.Debugf("the digest is %v", string(art.Digest))
 		remote := proxy.CreateRemoteInterface(p.RegistryID)
-		err = proxy.Ctl.ProxyManifest(ctx, p, repo, art, w, remote)
+		err = proxy.ControllerInstance().ProxyManifest(ctx, p, repo, art, w, remote)
 		if err != nil {
 			log.Errorf("failed to proxy the manifest, error:%v", err)
 			serror.SendError(w, err)

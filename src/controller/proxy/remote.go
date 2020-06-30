@@ -16,6 +16,7 @@ package proxy
 
 import (
 	"github.com/docker/distribution"
+	"github.com/goharbor/harbor/src/lib/log"
 	"github.com/goharbor/harbor/src/replication/adapter"
 	"github.com/goharbor/harbor/src/replication/registry"
 	"io"
@@ -37,7 +38,11 @@ type remote struct {
 
 // CreateRemoteInterface create a remote interface
 func CreateRemoteInterface(regID int64) RemoteInterface {
-	return &remote{regID: regID}
+	r := &remote{regID: regID}
+	if err := r.init(); err != nil {
+		log.Errorf("failed to create remote error %v", err)
+	}
+	return r
 }
 
 func (r *remote) init() error {
@@ -59,16 +64,10 @@ func (r *remote) init() error {
 }
 
 func (r *remote) BlobReader(orgRepo, dig string) (int64, io.ReadCloser, error) {
-	if err := r.init(); err != nil {
-		return 0, nil, err
-	}
 	return r.registry.PullBlob(orgRepo, dig)
 }
 
 func (r *remote) Manifest(repository string, ref string) (distribution.Manifest, error) {
-	if err := r.init(); err != nil {
-		return nil, err
-	}
 	man, _, err := r.registry.PullManifest(repository, ref)
 	return man, err
 }

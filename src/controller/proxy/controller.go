@@ -36,34 +36,44 @@ import (
 
 const (
 	maxWait             = 10
-	manifestListWaitSec = 1800
+	manifestListWaitSec = 900
 	sleepIntervalSec    = 20
 )
 
 var (
 	// Ctl is a global proxy controller instance
-	Ctl = NewController()
+	ctl     Controller
+	ctlLock sync.Mutex
 )
 
 // Controller defines the operations related with pull through proxy
 type Controller interface {
-	// UseLocalManifest check if the manifest should use local
-	UseLocalManifest(ctx context.Context, p *models.Project, art lib.ArtifactInfo) bool
-	// UseLocalBlob check if the blob should use local
-	UseLocalBlob(ctx context.Context, p *models.Project, digest string) bool
+	// UseLocal check if the manifest should use local
+	UseLocal(ctx context.Context, p *models.Project, art lib.ArtifactInfo) bool
 	// ProxyBlob proxy the blob request to the target server
 	ProxyBlob(ctx context.Context, p *models.Project, repo string, dig string, w http.ResponseWriter, r RemoteInterface) error
 	// ProxyManifest proxy the manifest to the target server
 	ProxyManifest(ctx context.Context, p *models.Project, repo string, art lib.ArtifactInfo, w http.ResponseWriter, r RemoteInterface) error
 }
-
 type controller struct {
 	blobCtl     blob.Controller
 	registryMgr registry.Manager
-	mu          sync.Mutex
-	inflight    map[string]interface{}
 	artifactCtl artifact.Controller
 	local       LocalInterface
+}
+
+func ControllerInstance() Controller {
+	ctlLock.Lock()
+	defer ctlLock.Unlock()
+	if ctl == nil {
+		ctl = &controller{
+			blobCtl:     blob.Ctl,
+			registryMgr: registry.NewDefaultManager(),
+			artifactCtl: artifact.Ctl,
+			local:       CreateLocalInterface(),
+		}
+	}
+	return ctl
 }
 
 func (c *controller) isProxyReady(p *models.Project) bool {
@@ -78,7 +88,7 @@ func (c *controller) isProxyReady(p *models.Project) bool {
 	return reg.Status == model.Healthy
 }
 
-func (c *controller) UseLocalManifest(ctx context.Context, p *models.Project, art lib.ArtifactInfo) bool {
+func (c *controller) UseLocal(ctx context.Context, p *models.Project, art lib.ArtifactInfo) bool {
 	if !c.isProxyReady(p) {
 		return true
 	}
@@ -89,17 +99,6 @@ func (c *controller) UseLocalManifest(ctx context.Context, p *models.Project, ar
 		}
 	}
 	return false
-}
-
-func (c *controller) UseLocalBlob(ctx context.Context, p *models.Project, digest string) bool {
-	if !c.isProxyReady(p) {
-		return true
-	}
-	exist, err := c.local.BlobExist(ctx, digest)
-	if err != nil {
-		return false
-	}
-	return exist
 }
 
 func (c *controller) ProxyManifest(ctx context.Context, p *models.Project, repo string, art lib.ArtifactInfo, w http.ResponseWriter, r RemoteInterface) error {
@@ -159,17 +158,6 @@ func (c *controller) ProxyBlob(ctx context.Context, p *models.Project, repo stri
 		}
 	}()
 	return nil
-}
-
-// NewController create an instance of the Controller
-func NewController() Controller {
-	return &controller{
-		blobCtl:     blob.Ctl,
-		registryMgr: registry.NewDefaultManager(),
-		inflight:    make(map[string]interface{}),
-		artifactCtl: artifact.Ctl,
-		local:       CreateLocalInterface(),
-	}
 }
 
 func (c *controller) putBlobToLocal(ctx context.Context, p *models.Project, orgRepo string, localRepo string, desc distribution.Descriptor, r RemoteInterface) error {

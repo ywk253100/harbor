@@ -61,7 +61,11 @@ type local struct {
 
 // CreateLocalInterface create the LocalInterface
 func CreateLocalInterface() LocalInterface {
-	return &local{}
+	l := &local{}
+	if err := l.init(); err != nil {
+		log.Errorf("Failed to init local, error %v", err)
+	}
+	return l
 }
 
 // TODO: replace it with head request to local repo
@@ -92,9 +96,6 @@ func (l *local) init() error {
 
 func (l *local) PushBlob(ctx context.Context, p *models.Project, localRepo string, desc distribution.Descriptor, bReader io.ReadCloser) error {
 	log.Debugf("Put blob to local registry, localRepo:%v, digest: %v", localRepo, desc.Digest)
-	if err := l.init(); err != nil {
-		return err
-	}
 	err := l.registry.PushBlob(localRepo, string(desc.Digest), desc.Size, bReader)
 	return err
 }
@@ -117,9 +118,6 @@ func (l *local) PushManifest(ctx context.Context, p *models.Project, repo string
 	mu.Unlock()
 	defer releaseLock(artifact)
 
-	if err := l.init(); err != nil {
-		return err
-	}
 	mediaType, payload, err := mfst.Payload()
 	if err != nil {
 		return err
