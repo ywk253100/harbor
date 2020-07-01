@@ -47,7 +47,7 @@ var (
 
 // Controller defines the operations related with pull through proxy
 type Controller interface {
-	// UseLocal check if the manifest should use local
+	// UseLocal check if the manifest should use localHelper
 	UseLocal(ctx context.Context, p *models.Project, art lib.ArtifactInfo) bool
 	// ProxyBlob proxy the blob request to the target server
 	ProxyBlob(ctx context.Context, p *models.Project, repo string, dig string, w http.ResponseWriter) error
@@ -69,7 +69,7 @@ func ControllerInstance() Controller {
 			blobCtl:     blob.Ctl,
 			registryMgr: registry.NewDefaultManager(),
 			artifactCtl: artifact.Ctl,
-			local:       CreateLocalInterface(),
+			local:       NewLocalHelper(),
 		}
 	}
 	return ctl
@@ -92,9 +92,6 @@ func (c *controller) ProxyManifest(ctx context.Context, p *models.Project, repo 
 	ref := string(art.Digest)
 	if len(ref) == 0 {
 		ref = art.Tag
-	}
-	if len(ref) == 0 {
-		ref = "latest"
 	}
 	man, err = r.Manifest(repo, ref)
 	if err != nil {
@@ -138,17 +135,19 @@ func (c *controller) ProxyBlob(ctx context.Context, p *models.Project, repo stri
 	desc.Digest = digest.Digest(dig)
 
 	setHeaders(w, size, desc.MediaType, dig)
+	// put blob to localHelper will start another connection to the remoteHelper,
+	// to reduce the impact of it, cache the blob after it send to the client
 	go func() {
 		err := c.putBlobToLocal(ctx, p, repo, p.Name+"/"+repo, desc, r)
 		if err != nil {
-			log.Errorf("error while putting blob to local, %v", err)
+			log.Errorf("error while putting blob to localHelper, %v", err)
 		}
 	}()
 	return nil
 }
 
 func (c *controller) putBlobToLocal(ctx context.Context, p *models.Project, orgRepo string, localRepo string, desc distribution.Descriptor, r remoteInterface) error {
-	log.Debugf("Put blob to local registry!, sourceRepo:%v, localRepo:%v, digest: %v", orgRepo, localRepo, desc.Digest)
+	log.Debugf("Put blob to localHelper registry!, sourceRepo:%v, localRepo:%v, digest: %v", orgRepo, localRepo, desc.Digest)
 	_, bReader, err := r.BlobReader(orgRepo, string(desc.Digest))
 	if err != nil {
 		log.Error(err)
@@ -173,7 +172,7 @@ func (c *controller) waitAndPushManifest(ctx context.Context, p *models.Project,
 	if contType == manifestlist.MediaTypeManifestList {
 		err := c.local.PushManifestList(ctx, p, localRepo, tag, art, man)
 		if err != nil {
-			log.Errorf("error when push manifest list to local:%v", err)
+			log.Errorf("error when push manifest list to localHelper:%v", err)
 		}
 		return
 	}
@@ -186,11 +185,11 @@ func (c *controller) waitAndPushManifest(ctx context.Context, p *models.Project,
 		}
 		log.Debugf("Current n=%v", n)
 		if n+1 == maxWait && len(waitBlobs) > 0 {
-			// docker client will skip to pull layers exist in local
+			// docker client will skip to pull layers exist in localHelper
 			// these blobs is not exist in the proxy server
 			// it will cause the manifest dependency check always fail
 			// need to push these blobs before push manifest to avoid failure
-			log.Debug("Waiting blobs not empty, push it to local repo manually")
+			log.Debug("Waiting blobs not empty, push it to localHelper repo manually")
 			for _, desc := range waitBlobs {
 				err := c.putBlobToLocal(ctx, p, repo, localRepo, desc, r)
 				if err != nil {

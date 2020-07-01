@@ -22,30 +22,30 @@ import (
 	"io"
 )
 
-// remoteInterface defines operations related to remote repository under proxy
+// remoteInterface defines operations related to remoteHelper repository under proxy
 type remoteInterface interface {
-	// BlobReader create a reader for remote blob
-	BlobReader(orgRepo, dig string) (int64, io.ReadCloser, error)
+	// BlobReader create a reader for remoteHelper blob
+	BlobReader(repo, dig string) (int64, io.ReadCloser, error)
 	// Manifest get manifest by reference
-	Manifest(repository string, dig string) (distribution.Manifest, error)
+	Manifest(repo string, dig string) (distribution.Manifest, error)
 }
 
-// remote defines operations related to remote repository under proxy
-type remote struct {
+// remoteHelper defines operations related to remoteHelper repository under proxy
+type remoteHelper struct {
 	regID    int64
 	registry adapter.ArtifactRegistry
 }
 
-// NewRemoteHelper create a remote interface
+// NewRemoteHelper create a remoteHelper interface
 func NewRemoteHelper(regID int64) remoteInterface {
-	r := &remote{regID: regID}
+	r := &remoteHelper{regID: regID}
 	if err := r.init(); err != nil {
-		log.Errorf("failed to create remote error %v", err)
+		log.Errorf("failed to create remoteHelper error %v", err)
 	}
 	return r
 }
 
-func (r *remote) init() error {
+func (r *remoteHelper) init() error {
 
 	if r.registry != nil {
 		return nil
@@ -63,11 +63,11 @@ func (r *remote) init() error {
 	return nil
 }
 
-func (r *remote) BlobReader(orgRepo, dig string) (int64, io.ReadCloser, error) {
-	return r.registry.PullBlob(orgRepo, dig)
+func (r *remoteHelper) BlobReader(repo, dig string) (int64, io.ReadCloser, error) {
+	return r.registry.PullBlob(repo, dig)
 }
 
-func (r *remote) Manifest(repository string, ref string) (distribution.Manifest, error) {
-	man, _, err := r.registry.PullManifest(repository, ref)
+func (r *remoteHelper) Manifest(repo string, ref string) (distribution.Manifest, error) {
+	man, _, err := r.registry.PullManifest(repo, ref)
 	return man, err
 }

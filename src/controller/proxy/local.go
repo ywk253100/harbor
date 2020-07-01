@@ -37,46 +37,49 @@ var (
 	inflight map[string]interface{} = make(map[string]interface{})
 )
 
-// localInterface defines operations related to local repo under proxy mode
+// localInterface defines operations related to localHelper repo under proxy mode
 type localInterface interface {
-	// BlobExist check if the blob exist in local repo
+	// BlobExist check if the blob exist in localHelper repo
 	BlobExist(ctx context.Context, dig string) (bool, error)
-	// PushBlob push blob to local repo
+	// PushBlob push blob to localHelper repo
 	PushBlob(ctx context.Context, p *models.Project, localRepo string, desc distribution.Descriptor, bReader io.ReadCloser) error
-	// PushManifest push manifest to local repo
+	// PushManifest push manifest to localHelper repo
 	PushManifest(ctx context.Context, p *models.Project, repo string, tag string, mfst distribution.Manifest) error
-	// PushManifestList push manifest list to local repo
+	// PushManifestList push manifest list to localHelper repo
 	PushManifestList(ctx context.Context, p *models.Project, repo string, tag string, art lib.ArtifactInfo, man distribution.Manifest) error
 	// CheckDependencies check if the manifest's dependency is ready
 	CheckDependencies(ctx context.Context, man distribution.Manifest, dig string, mediaType string) []distribution.Descriptor
-	// DeleteManifest cleanup delete tag from local cache
+	// DeleteManifest cleanup delete tag from localHelper cache
 	DeleteManifest(ctx context.Context, repo, ref string)
 }
 
-// local defines operations related to local repo under proxy mode
-type local struct {
+// localHelper defines operations related to localHelper repo under proxy mode
+type localHelper struct {
 	registry adapter.ArtifactRegistry
-	//adapter *base.Adapter
 }
 
-// CreateLocalInterface create the localInterface
-func CreateLocalInterface() localInterface {
-	l := &local{}
+// NewLocalHelper create the localInterface
+func NewLocalHelper() localInterface {
+	l := &localHelper{}
 	if err := l.init(); err != nil {
-		log.Errorf("Failed to init local, error %v", err)
+		log.Errorf("Failed to init localHelper, error %v", err)
 	}
 	return l
 }
 
-// TODO: replace it with head request to local repo
-func (l *local) BlobExist(ctx context.Context, dig string) (bool, error) {
+// TODO: replace it with head request to localHelper repo
+func (l *localHelper) BlobExist(ctx context.Context, dig string) (bool, error) {
 	return blob.Ctl.Exist(ctx, dig)
 }
 
-func (l *local) init() error {
+func (l *localHelper) init() error {
 	if l.registry != nil {
 		return nil
 	}
+	log.Debugf("core url:%s, localHelper core url: %v", config.GetCoreURL(), config.LocalCoreURL())
+	// the traffic is internal only
+	// registryURL := config.LocalCoreURL()
+	// TODO: need to verify it works
 	registryURL := config.GetCoreURL()
 	reg := &model.Registry{
 		URL: registryURL,
@@ -94,14 +97,14 @@ func (l *local) init() error {
 	return err
 }
 
-func (l *local) PushBlob(ctx context.Context, p *models.Project, localRepo string, desc distribution.Descriptor, bReader io.ReadCloser) error {
-	log.Debugf("Put blob to local registry, localRepo:%v, digest: %v", localRepo, desc.Digest)
+func (l *localHelper) PushBlob(ctx context.Context, p *models.Project, localRepo string, desc distribution.Descriptor, bReader io.ReadCloser) error {
+	log.Debugf("Put blob to localHelper registry, localRepo:%v, digest: %v", localRepo, desc.Digest)
 	err := l.registry.PushBlob(localRepo, string(desc.Digest), desc.Size, bReader)
 	return err
 }
 
-func (l *local) PushManifest(ctx context.Context, p *models.Project, repo string, tag string, mfst distribution.Manifest) error {
-	// Make sure there is only one go routing to push current artifact to local repo
+func (l *localHelper) PushManifest(ctx context.Context, p *models.Project, repo string, tag string, mfst distribution.Manifest) error {
+	// Make sure there is only one go routing to push current artifact to localHelper repo
 	if len(tag) == 0 {
 		// if tag is empty, set to latest
 		tag = "latest"
@@ -126,8 +129,8 @@ func (l *local) PushManifest(ctx context.Context, p *models.Project, repo string
 	return err
 }
 
-// DeleteManifest cleanup delete tag from local cache
-func (l *local) DeleteManifest(ctx context.Context, repo, ref string) {
+// DeleteManifest cleanup delete tag from localHelper cache
+func (l *localHelper) DeleteManifest(ctx context.Context, repo, ref string) {
 	log.Debug("Remove tag from repo if it is exist")
 	// TODO: remove cached tag if it exist in cache
 }
@@ -139,7 +142,7 @@ func releaseLock(artifact string) {
 }
 
 // updateManifestList -- Trim the manifest list, make sure all depend manifests are ready
-func (l *local) updateManifestList(ctx context.Context, manifest distribution.Manifest) (distribution.Manifest, error) {
+func (l *localHelper) updateManifestList(ctx context.Context, manifest distribution.Manifest) (distribution.Manifest, error) {
 	switch v := manifest.(type) {
 	case *manifestlist.DeserializedManifestList:
 		existMans := make([]manifestlist.ManifestDescriptor, 0)
@@ -160,7 +163,7 @@ func (l *local) updateManifestList(ctx context.Context, manifest distribution.Ma
 	return manifest, nil
 }
 
-func (l *local) PushManifestList(ctx context.Context, p *models.Project, repo string, tag string, art lib.ArtifactInfo, man distribution.Manifest) error {
+func (l *localHelper) PushManifestList(ctx context.Context, p *models.Project, repo string, tag string, art lib.ArtifactInfo, man distribution.Manifest) error {
 	// For manifest list, it might include some different platforms, such as amd64, arm
 	// the client only pull one platform, such as amd64, the arm platform is not pulled.
 	// if pushing the original directly, it will fail to check the dependencies
@@ -174,7 +177,7 @@ func (l *local) PushManifestList(ctx context.Context, p *models.Project, repo st
 	return l.PushManifest(ctx, p, repo, tag, newMan)
 }
 
-func (l *local) CheckDependencies(ctx context.Context, man distribution.Manifest, dig string, mediaType string) []distribution.Descriptor {
+func (l *localHelper) CheckDependencies(ctx context.Context, man distribution.Manifest, dig string, mediaType string) []distribution.Descriptor {
 	descriptors := man.References()
 	waitDesc := make([]distribution.Descriptor, 0)
 	for _, desc := range descriptors {
