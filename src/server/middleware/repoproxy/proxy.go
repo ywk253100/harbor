@@ -47,10 +47,9 @@ func BlobGetMiddleware() func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
-		remote := proxy.CreateRemoteInterface(p.RegistryID)
 		repo := trimProxyPrefix(art.ProjectName, art.Repository)
 		log.Debugf("the blob doesn't exist, proxy the request to the target server, url:%v", repo)
-		err = proxy.ControllerInstance().ProxyBlob(ctx, p, repo, art.Digest, w, remote)
+		err = proxy.ControllerInstance().ProxyBlob(ctx, p, repo, art.Digest, w)
 		if err != nil {
 			serror.SendError(w, err)
 			return
@@ -77,8 +76,7 @@ func ManifestGetMiddleware() func(http.Handler) http.Handler {
 
 		repo := trimProxyPrefix(art.ProjectName, art.Repository)
 		log.Debugf("the digest is %v", string(art.Digest))
-		remote := proxy.CreateRemoteInterface(p.RegistryID)
-		err = proxy.ControllerInstance().ProxyManifest(ctx, p, repo, art, w, remote)
+		err = proxy.ControllerInstance().ProxyManifest(ctx, p, repo, art, w)
 		if err != nil {
 			serror.SendError(w, err)
 			return

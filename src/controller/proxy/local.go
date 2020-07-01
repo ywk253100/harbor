@@ -37,8 +37,8 @@ var (
 	inflight map[string]interface{} = make(map[string]interface{})
 )
 
-// LocalInterface defines operations related to local repo under proxy mode
-type LocalInterface interface {
+// localInterface defines operations related to local repo under proxy mode
+type localInterface interface {
 	// BlobExist check if the blob exist in local repo
 	BlobExist(ctx context.Context, dig string) (bool, error)
 	// PushBlob push blob to local repo
@@ -59,8 +59,8 @@ type local struct {
 	//adapter *base.Adapter
 }
 
-// CreateLocalInterface create the LocalInterface
-func CreateLocalInterface() LocalInterface {
+// CreateLocalInterface create the localInterface
+func CreateLocalInterface() localInterface {
 	l := &local{}
 	if err := l.init(); err != nil {
 		log.Errorf("Failed to init local, error %v", err)
@@ -161,7 +161,11 @@ func (l *local) updateManifestList(ctx context.Context, manifest distribution.Ma
 }
 
 func (l *local) PushManifestList(ctx context.Context, p *models.Project, repo string, tag string, art lib.ArtifactInfo, man distribution.Manifest) error {
-	// Make sure all depend manifests are pushed to local repo
+	// For manifest list, it might include some different platforms, such as amd64, arm
+	// the client only pull one platform, such as amd64, the arm platform is not pulled.
+	// if pushing the original directly, it will fail to check the dependencies
+	// to avoid this error, need to update the manifest list, keep the existing platform
+	// the proxy wait 30 minutes, and push the updated manifest list in cache
 	time.Sleep(manifestListWaitSec * time.Second)
 	newMan, err := l.updateManifestList(ctx, man)
 	if err != nil {

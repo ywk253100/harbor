@@ -22,8 +22,8 @@ import (
 	"io"
 )
 
-// RemoteInterface defines operations related to remote repository under proxy
-type RemoteInterface interface {
+// remoteInterface defines operations related to remote repository under proxy
+type remoteInterface interface {
 	// BlobReader create a reader for remote blob
 	BlobReader(orgRepo, dig string) (int64, io.ReadCloser, error)
 	// Manifest get manifest by reference
@@ -36,8 +36,8 @@ type remote struct {
 	registry adapter.ArtifactRegistry
 }
 
-// CreateRemoteInterface create a remote interface
-func CreateRemoteInterface(regID int64) RemoteInterface {
+// NewRemoteHelper create a remote interface
+func NewRemoteHelper(regID int64) remoteInterface {
 	r := &remote{regID: regID}
 	if err := r.init(); err != nil {
 		log.Errorf("failed to create remote error %v", err)
