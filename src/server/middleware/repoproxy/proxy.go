@@ -43,7 +43,7 @@ func BlobGetMiddleware() func(http.Handler) http.Handler {
 			return
 		}
 
-		if isProxyReady(p) == false || proxy.ControllerInstance().UseLocal(ctx, p, art) {
+		if isProxyReady(p) == false || proxy.ControllerInstance().UseLocal(ctx, art.Digest) {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -69,7 +69,7 @@ func ManifestGetMiddleware() func(http.Handler) http.Handler {
 			return
 		}
 
-		if isProxyReady(p) == false || proxy.ControllerInstance().UseLocal(ctx, p, art) {
+		if isProxyReady(p) == false || proxy.ControllerInstance().UseLocal(ctx, art.Digest) {
 			next.ServeHTTP(w, r)
 			return
 		}

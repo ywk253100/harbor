@@ -48,7 +48,7 @@ var (
 // Controller defines the operations related with pull through proxy
 type Controller interface {
 	// UseLocal check if the manifest should use localHelper
-	UseLocal(ctx context.Context, p *models.Project, art lib.ArtifactInfo) bool
+	UseLocal(ctx context.Context, digest string) bool
 	// ProxyBlob proxy the blob request to the target server
 	ProxyBlob(ctx context.Context, p *models.Project, repo string, dig string, w http.ResponseWriter) error
 	// ProxyManifest proxy the manifest to the target server
@@ -75,9 +75,9 @@ func ControllerInstance() Controller {
 	return ctl
 }
 
-func (c *controller) UseLocal(ctx context.Context, p *models.Project, art lib.ArtifactInfo) bool {
-	if len(string(art.Digest)) > 0 {
-		exist, err := c.local.BlobExist(ctx, art.Digest)
+func (c *controller) UseLocal(ctx context.Context, digest string) bool {
+	if len(digest) > 0 {
+		exist, err := c.local.BlobExist(ctx, digest)
 		if err == nil && exist {
 			return true
 		}
@@ -89,7 +89,7 @@ func (c *controller) ProxyManifest(ctx context.Context, p *models.Project, repo 
 	var man distribution.Manifest
 	var err error
 	r := NewRemoteHelper(p.RegistryID)
-	ref := string(art.Digest)
+	ref := art.Digest
 	if len(ref) == 0 {
 		ref = art.Tag
 	}
@@ -97,7 +97,7 @@ func (c *controller) ProxyManifest(ctx context.Context, p *models.Project, repo 
 	if err != nil {
 		if errors.IsNotFoundErr(err) {
 			go func() {
-				c.local.DeleteManifest(ctx, repo, string(art.Tag))
+				c.local.DeleteManifest(ctx, repo, art.Tag)
 			}()
 		}
 		return err
@@ -109,7 +109,7 @@ func (c *controller) ProxyManifest(ctx context.Context, p *models.Project, repo 
 
 	// Push manifest in background
 	go func() {
-		c.waitAndPushManifest(ctx, p, repo, string(art.Tag), man, art, ct, r)
+		c.waitAndPushManifest(ctx, p, repo, art.Tag, man, art, ct, r)
 	}()
 
 	return nil
