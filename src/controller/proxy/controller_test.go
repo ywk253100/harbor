@@ -12,32 +12,29 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package repoproxy
+package proxy
 
-import "testing"
+import (
+	"github.com/goharbor/harbor/src/lib"
+	"testing"
+)
 
-func TestTrimProxyPrefix(t *testing.T) {
-	type args struct {
-		project string
-		repo    string
-	}
+func TestRemoteRepoFromArtifactInfo(t *testing.T) {
 	cases := []struct {
 		name string
-		in   args
+		in   lib.ArtifactInfo
 		want string
 	}{
 		{
 			name: `normal test`,
-			in:   args{"dockerhub_proxy", "dockerhub_proxy/firstfloor/hello-world"},
+			in:   lib.ArtifactInfo{ProjectName: "dockerhub_proxy", Repository: "dockerhub_proxy/firstfloor/hello-world"},
 			want: "firstfloor/hello-world",
 		},
 	}
 
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
-
-			got := trimProxyPrefix(tt.in.project, tt.in.repo)
-
+			got := remoteRepoFromArtifactInfo(tt.in)
 			if got != tt.want {
 				t.Errorf(`(%v) = %v; want "%v"`, tt.in, got, tt.want)
 			}

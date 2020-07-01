@@ -19,7 +19,6 @@ import (
 	"github.com/goharbor/harbor/src/replication/registry"
 	serror "github.com/goharbor/harbor/src/server/error"
 	"net/http"
-	"strings"
 
 	"github.com/goharbor/harbor/src/common/models"
 	"github.com/goharbor/harbor/src/controller/project"
@@ -46,9 +45,7 @@ func BlobGetMiddleware() func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
-		repo := trimProxyPrefix(art.ProjectName, art.Repository)
-		log.Debugf("the blob doesn't exist, proxy the request to the target server, url:%v", repo)
-		err = proxy.ControllerInstance().ProxyBlob(ctx, p, repo, art.Digest, w)
+		err = proxy.ControllerInstance().ProxyBlob(ctx, p, art, w)
 		if err != nil {
 			serror.SendError(w, err)
 			return
@@ -73,21 +70,13 @@ func ManifestGetMiddleware() func(http.Handler) http.Handler {
 			return
 		}
 
-		repo := trimProxyPrefix(art.ProjectName, art.Repository)
 		log.Debugf("the digest is %v", string(art.Digest))
-		err = proxy.ControllerInstance().ProxyManifest(ctx, p, repo, art, w)
+		err = proxy.ControllerInstance().ProxyManifest(ctx, p, art, w)
 		if err != nil {
 			serror.SendError(w, err)
 			return
 		}
 	})
-}
-
-func trimProxyPrefix(projectName, repo string) string {
-	if strings.HasPrefix(repo, projectName+"/") {
-		return strings.TrimPrefix(repo, projectName+"/")
-	}
-	return repo
 }
 
 func canProxy(p *models.Project) bool {

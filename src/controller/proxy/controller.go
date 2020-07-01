@@ -29,6 +29,7 @@ import (
 	"github.com/opencontainers/go-digest"
 	"io"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 )
@@ -50,9 +51,9 @@ type Controller interface {
 	// UseLocal check if the manifest should use localHelper
 	UseLocal(ctx context.Context, digest string) bool
 	// ProxyBlob proxy the blob request to the target server
-	ProxyBlob(ctx context.Context, p *models.Project, repo string, dig string, w http.ResponseWriter) error
+	ProxyBlob(ctx context.Context, p *models.Project, art lib.ArtifactInfo, w http.ResponseWriter) error
 	// ProxyManifest proxy the manifest to the target server
-	ProxyManifest(ctx context.Context, p *models.Project, repo string, art lib.ArtifactInfo, w http.ResponseWriter) error
+	ProxyManifest(ctx context.Context, p *models.Project, art lib.ArtifactInfo, w http.ResponseWriter) error
 }
 type controller struct {
 	blobCtl     blob.Controller
@@ -85,19 +86,20 @@ func (c *controller) UseLocal(ctx context.Context, digest string) bool {
 	return false
 }
 
-func (c *controller) ProxyManifest(ctx context.Context, p *models.Project, repo string, art lib.ArtifactInfo, w http.ResponseWriter) error {
+func (c *controller) ProxyManifest(ctx context.Context, p *models.Project, art lib.ArtifactInfo, w http.ResponseWriter) error {
 	var man distribution.Manifest
 	var err error
+	remoteRepo := remoteRepoFromArtifactInfo(art)
 	r := NewRemoteHelper(p.RegistryID)
 	ref := art.Digest
 	if len(ref) == 0 {
 		ref = art.Tag
 	}
-	man, err = r.Manifest(repo, ref)
+	man, err = r.Manifest(remoteRepo, ref)
 	if err != nil {
 		if errors.IsNotFoundErr(err) {
 			go func() {
-				c.local.DeleteManifest(ctx, repo, art.Tag)
+				c.local.DeleteManifest(ctx, remoteRepo, art.Tag)
 			}()
 		}
 		return err
@@ -109,36 +111,41 @@ func (c *controller) ProxyManifest(ctx context.Context, p *models.Project, repo 
 
 	// Push manifest in background
 	go func() {
-		c.waitAndPushManifest(ctx, p, repo, art.Tag, man, art, ct, r)
+		c.waitAndPushManifest(ctx, p, remoteRepo, art.Tag, man, art, ct, r)
 	}()
 
 	return nil
 }
 
-func (c *controller) ProxyBlob(ctx context.Context, p *models.Project, repo string, dig string, w http.ResponseWriter) error {
-	log.Debugf("The blob doesn't exist, proxy the request to the target server, url:%v", repo)
+func (c *controller) ProxyBlob(ctx context.Context, p *models.Project, art lib.ArtifactInfo, w http.ResponseWriter) error {
+	remoteRepo := remoteRepoFromArtifactInfo(art)
+	log.Debugf("The blob doesn't exist, proxy the request to the target server, url:%v", remoteRepo)
 	r := NewRemoteHelper(p.RegistryID)
 	desc := distribution.Descriptor{}
-	size, bReader, err := r.BlobReader(repo, dig)
+	size, bReader, err := r.BlobReader(remoteRepo, art.Digest)
 	if err != nil {
 		log.Errorf("failed to pull blob, error %v", err)
 		return err
 	}
 	defer bReader.Close()
-	// Use ioi.CopyN to avoid avoid out of memory when pulling big blob
+	// Use io.CopyN to avoid avoid out of memory when pulling big blob
 	written, err := io.CopyN(w, bReader, size)
+	if err != nil {
+		log.Errorf("failed to proxy the digest: %v, error %v", art.Digest, err)
+		return err
+	}
 	if written != size {
 		e := errors.Errorf("The size mismatch, actual:%d, expected: %d", written, size)
 		return e
 	}
 	desc.Size = size
-	desc.Digest = digest.Digest(dig)
+	desc.Digest = digest.Digest(art.Digest)
 
-	setHeaders(w, size, desc.MediaType, dig)
+	setHeaders(w, size, desc.MediaType, art.Digest)
 	// put blob to localHelper will start another connection to the remoteHelper,
 	// to reduce the impact of it, cache the blob after it send to the client
 	go func() {
-		err := c.putBlobToLocal(ctx, p, repo, p.Name+"/"+repo, desc, r)
+		err := c.putBlobToLocal(ctx, remoteRepo, art.Repository, desc, r)
 		if err != nil {
 			log.Errorf("error while putting blob to localHelper, %v", err)
 		}
@@ -146,9 +153,9 @@ func (c *controller) ProxyBlob(ctx context.Context, p *models.Project, repo stri
 	return nil
 }
 
-func (c *controller) putBlobToLocal(ctx context.Context, p *models.Project, orgRepo string, localRepo string, desc distribution.Descriptor, r remoteInterface) error {
-	log.Debugf("Put blob to localHelper registry!, sourceRepo:%v, localRepo:%v, digest: %v", orgRepo, localRepo, desc.Digest)
-	_, bReader, err := r.BlobReader(orgRepo, string(desc.Digest))
+func (c *controller) putBlobToLocal(ctx context.Context, remoteRepo string, localRepo string, desc distribution.Descriptor, r remoteInterface) error {
+	log.Debugf("Put blob to localHelper registry!, sourceRepo:%v, localRepo:%v, digest: %v", remoteRepo, localRepo, desc.Digest)
+	_, bReader, err := r.BlobReader(remoteRepo, string(desc.Digest))
 	if err != nil {
 		log.Error(err)
 		return err
@@ -191,7 +198,7 @@ func (c *controller) waitAndPushManifest(ctx context.Context, p *models.Project,
 			// need to push these blobs before push manifest to avoid failure
 			log.Debug("Waiting blobs not empty, push it to localHelper repo manually")
 			for _, desc := range waitBlobs {
-				err := c.putBlobToLocal(ctx, p, repo, localRepo, desc, r)
+				err := c.putBlobToLocal(ctx, repo, localRepo, desc, r)
 				if err != nil {
 					log.Errorf("Failed to push blob to cache error: %v", err)
 					return
@@ -203,4 +210,13 @@ func (c *controller) waitAndPushManifest(ctx context.Context, p *models.Project,
 	if err != nil {
 		log.Errorf("failed to push manifest, error %v", err)
 	}
+}
+
+func remoteRepoFromArtifactInfo(art lib.ArtifactInfo) string {
+	repo := art.Repository
+	projectName := art.ProjectName
+	if strings.HasPrefix(repo, projectName+"/") {
+		return strings.TrimPrefix(repo, projectName+"/")
+	}
+	return repo
 }
