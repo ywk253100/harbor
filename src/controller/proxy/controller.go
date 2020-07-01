@@ -154,7 +154,7 @@ func (c *controller) putBlobToLocal(ctx context.Context, p *models.Project, orgR
 		return err
 	}
 	defer bReader.Close()
-	err = c.local.PushBlob(ctx, p, localRepo, desc, bReader)
+	err = c.local.PushBlob(ctx, localRepo, desc, bReader)
 	return err
 }
 
@@ -170,7 +170,7 @@ func setHeaders(w http.ResponseWriter, size int64, mediaType string, dig string)
 func (c *controller) waitAndPushManifest(ctx context.Context, p *models.Project, repo, tag string, man distribution.Manifest, art lib.ArtifactInfo, contType string, r remoteInterface) {
 	localRepo := art.ProjectName + "/" + repo
 	if contType == manifestlist.MediaTypeManifestList {
-		err := c.local.PushManifestList(ctx, p, localRepo, tag, man)
+		err := c.local.PushManifestList(ctx, localRepo, tag, man)
 		if err != nil {
 			log.Errorf("error when push manifest list to localHelper:%v", err)
 		}
@@ -199,7 +199,7 @@ func (c *controller) waitAndPushManifest(ctx context.Context, p *models.Project,
 			}
 		}
 	}
-	err := c.local.PushManifest(ctx, p, localRepo, art.Tag, man)
+	err := c.local.PushManifest(ctx, localRepo, art.Tag, man)
 	if err != nil {
 		log.Errorf("failed to push manifest, error %v", err)
 	}

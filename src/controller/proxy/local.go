@@ -18,7 +18,6 @@ import (
 	"context"
 	"github.com/docker/distribution"
 	"github.com/docker/distribution/manifest/manifestlist"
-	"github.com/goharbor/harbor/src/common/models"
 	"github.com/goharbor/harbor/src/controller/blob"
 	"github.com/goharbor/harbor/src/core/config"
 	"github.com/goharbor/harbor/src/lib/log"
@@ -35,11 +34,11 @@ type localInterface interface {
 	// BlobExist check if the blob exist in localHelper repo
 	BlobExist(ctx context.Context, dig string) (bool, error)
 	// PushBlob push blob to localHelper repo
-	PushBlob(ctx context.Context, p *models.Project, localRepo string, desc distribution.Descriptor, bReader io.ReadCloser) error
+	PushBlob(ctx context.Context, localRepo string, desc distribution.Descriptor, bReader io.ReadCloser) error
 	// PushManifest push manifest to localHelper repo
-	PushManifest(ctx context.Context, p *models.Project, repo string, tag string, mfst distribution.Manifest) error
+	PushManifest(ctx context.Context, repo string, tag string, mfst distribution.Manifest) error
 	// PushManifestList push manifest list to localHelper repo
-	PushManifestList(ctx context.Context, p *models.Project, repo string, tag string, man distribution.Manifest) error
+	PushManifestList(ctx context.Context, repo string, tag string, man distribution.Manifest) error
 	// CheckDependencies check if the manifest's dependency is ready
 	CheckDependencies(ctx context.Context, man distribution.Manifest, dig string, mediaType string) []distribution.Descriptor
 	// DeleteManifest cleanup delete tag from localHelper cache
@@ -90,13 +89,13 @@ func (l *localHelper) init() error {
 	return err
 }
 
-func (l *localHelper) PushBlob(ctx context.Context, p *models.Project, localRepo string, desc distribution.Descriptor, bReader io.ReadCloser) error {
+func (l *localHelper) PushBlob(ctx context.Context, localRepo string, desc distribution.Descriptor, bReader io.ReadCloser) error {
 	log.Debugf("Put blob to localHelper registry, localRepo:%v, digest: %v", localRepo, desc.Digest)
 	err := l.registry.PushBlob(localRepo, string(desc.Digest), desc.Size, bReader)
 	return err
 }
 
-func (l *localHelper) PushManifest(ctx context.Context, p *models.Project, repo string, tag string, mfst distribution.Manifest) error {
+func (l *localHelper) PushManifest(ctx context.Context, repo string, tag string, mfst distribution.Manifest) error {
 	// Make sure there is only one go routing to push current artifact to localHelper repo
 	if len(tag) == 0 {
 		// if tag is empty, set to latest
@@ -144,7 +143,7 @@ func (l *localHelper) updateManifestList(ctx context.Context, manifest distribut
 	return manifest, nil
 }
 
-func (l *localHelper) PushManifestList(ctx context.Context, p *models.Project, repo string, tag string, man distribution.Manifest) error {
+func (l *localHelper) PushManifestList(ctx context.Context, repo string, tag string, man distribution.Manifest) error {
 	// For manifest list, it might include some different platforms, such as amd64, arm
 	// the client only pull one platform, such as amd64, the arm platform is not pulled.
 	// if pushing the original directly, it will fail to check the dependencies
@@ -155,7 +154,7 @@ func (l *localHelper) PushManifestList(ctx context.Context, p *models.Project, r
 	if err != nil {
 		log.Error(err)
 	}
-	return l.PushManifest(ctx, p, repo, tag, newMan)
+	return l.PushManifest(ctx, repo, tag, newMan)
 }
 
 func (l *localHelper) CheckDependencies(ctx context.Context, man distribution.Manifest, dig string, mediaType string) []distribution.Descriptor {
