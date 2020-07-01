@@ -42,8 +42,7 @@ func BlobGetMiddleware() func(http.Handler) http.Handler {
 			serror.SendError(w, err)
 			return
 		}
-
-		if isProxyReady(p) == false || proxy.ControllerInstance().UseLocal(ctx, art.Digest) {
+		if canProxy(p) == false || proxy.ControllerInstance().UseLocal(ctx, art.Digest) {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -69,7 +68,7 @@ func ManifestGetMiddleware() func(http.Handler) http.Handler {
 			return
 		}
 
-		if isProxyReady(p) == false || proxy.ControllerInstance().UseLocal(ctx, art.Digest) {
+		if !canProxy(p) || proxy.ControllerInstance().UseLocal(ctx, art.Digest) {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -91,7 +90,7 @@ func trimProxyPrefix(projectName, repo string) string {
 	return repo
 }
 
-func isProxyReady(p *models.Project) bool {
+func canProxy(p *models.Project) bool {
 	if p.RegistryID < 1 {
 		return false
 	}

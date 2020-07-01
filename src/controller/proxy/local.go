@@ -40,7 +40,7 @@ type localInterface interface {
 	// PushManifestList push manifest list to localHelper repo
 	PushManifestList(ctx context.Context, repo string, tag string, man distribution.Manifest) error
 	// CheckDependencies check if the manifest's dependency is ready
-	CheckDependencies(ctx context.Context, man distribution.Manifest, dig string, mediaType string) []distribution.Descriptor
+	CheckDependencies(ctx context.Context, man distribution.Manifest) []distribution.Descriptor
 	// DeleteManifest cleanup delete tag from localHelper cache
 	DeleteManifest(ctx context.Context, repo, ref string)
 }
@@ -157,7 +157,7 @@ func (l *localHelper) PushManifestList(ctx context.Context, repo string, tag str
 	return l.PushManifest(ctx, repo, tag, newMan)
 }
 
-func (l *localHelper) CheckDependencies(ctx context.Context, man distribution.Manifest, dig string, mediaType string) []distribution.Descriptor {
+func (l *localHelper) CheckDependencies(ctx context.Context, man distribution.Manifest) []distribution.Descriptor {
 	descriptors := man.References()
 	waitDesc := make([]distribution.Descriptor, 0)
 	for _, desc := range descriptors {

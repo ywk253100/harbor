@@ -179,7 +179,7 @@ func (c *controller) waitAndPushManifest(ctx context.Context, p *models.Project,
 
 	for n := 0; n < maxWait; n = n + 1 {
 		time.Sleep(sleepIntervalSec * time.Second)
-		waitBlobs := c.local.CheckDependencies(ctx, man, string(art.Digest), contType)
+		waitBlobs := c.local.CheckDependencies(ctx, man)
 		if len(waitBlobs) == 0 {
 			break
 		}
