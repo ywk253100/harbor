@@ -63,6 +63,8 @@ type controller struct {
 }
 
 func ControllerInstance() Controller {
+	// Lazy load the controller
+	// Because LocalHelper is not ready when core doesn't startup completely
 	ctlLock.Lock()
 	defer ctlLock.Unlock()
 	if ctl == nil {
@@ -111,7 +113,7 @@ func (c *controller) ProxyManifest(ctx context.Context, p *models.Project, art l
 
 	// Push manifest in background
 	go func() {
-		c.waitAndPushManifest(ctx, p, remoteRepo, art.Tag, man, art, ct, r)
+		c.waitAndPushManifest(ctx, remoteRepo, man, art, ct, r)
 	}()
 
 	return nil
@@ -174,10 +176,10 @@ func setHeaders(w http.ResponseWriter, size int64, mediaType string, dig string)
 	w.Header().Set("Etag", dig)
 }
 
-func (c *controller) waitAndPushManifest(ctx context.Context, p *models.Project, repo, tag string, man distribution.Manifest, art lib.ArtifactInfo, contType string, r remoteInterface) {
-	localRepo := art.ProjectName + "/" + repo
+func (c *controller) waitAndPushManifest(ctx context.Context, remoteRepo string, man distribution.Manifest, art lib.ArtifactInfo, contType string, r remoteInterface) {
+
 	if contType == manifestlist.MediaTypeManifestList {
-		err := c.local.PushManifestList(ctx, localRepo, tag, man)
+		err := c.local.PushManifestList(ctx, art.Repository, art.Tag, man)
 		if err != nil {
 			log.Errorf("error when push manifest list to localHelper:%v", err)
 		}
@@ -196,9 +198,9 @@ func (c *controller) waitAndPushManifest(ctx context.Context, p *models.Project,
 			// these blobs is not exist in the proxy server
 			// it will cause the manifest dependency check always fail
 			// need to push these blobs before push manifest to avoid failure
-			log.Debug("Waiting blobs not empty, push it to localHelper repo manually")
+			log.Debug("Waiting blobs not empty, push it to localHelper remoteRepo directly")
 			for _, desc := range waitBlobs {
-				err := c.putBlobToLocal(ctx, repo, localRepo, desc, r)
+				err := c.putBlobToLocal(ctx, remoteRepo, art.Repository, desc, r)
 				if err != nil {
 					log.Errorf("Failed to push blob to cache error: %v", err)
 					return
@@ -206,7 +208,7 @@ func (c *controller) waitAndPushManifest(ctx context.Context, p *models.Project,
 			}
 		}
 	}
-	err := c.local.PushManifest(ctx, localRepo, art.Tag, man)
+	err := c.local.PushManifest(ctx, art.Repository, art.Tag, man)
 	if err != nil {
 		log.Errorf("failed to push manifest, error %v", err)
 	}

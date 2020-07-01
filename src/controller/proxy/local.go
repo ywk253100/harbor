@@ -98,6 +98,7 @@ func (l *localHelper) PushBlob(ctx context.Context, localRepo string, desc distr
 func (l *localHelper) PushManifest(ctx context.Context, repo string, tag string, mfst distribution.Manifest) error {
 	// Make sure there is only one go routing to push current artifact to localHelper repo
 	if len(tag) == 0 {
+		// when push a manifest list, the tag is empty, for example: busybox
 		// if tag is empty, set to latest
 		tag = "latest"
 	}
