@@ -170,7 +170,7 @@ func setHeaders(w http.ResponseWriter, size int64, mediaType string, dig string)
 func (c *controller) waitAndPushManifest(ctx context.Context, p *models.Project, repo, tag string, man distribution.Manifest, art lib.ArtifactInfo, contType string, r remoteInterface) {
 	localRepo := art.ProjectName + "/" + repo
 	if contType == manifestlist.MediaTypeManifestList {
-		err := c.local.PushManifestList(ctx, p, localRepo, tag, art, man)
+		err := c.local.PushManifestList(ctx, p, localRepo, tag, man)
 		if err != nil {
 			log.Errorf("error when push manifest list to localHelper:%v", err)
 		}

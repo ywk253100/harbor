@@ -21,7 +21,6 @@ import (
 	"github.com/goharbor/harbor/src/common/models"
 	"github.com/goharbor/harbor/src/controller/blob"
 	"github.com/goharbor/harbor/src/core/config"
-	"github.com/goharbor/harbor/src/lib"
 	"github.com/goharbor/harbor/src/lib/log"
 	"github.com/goharbor/harbor/src/replication/adapter"
 	"github.com/goharbor/harbor/src/replication/adapter/harbor/base"
@@ -40,7 +39,7 @@ type localInterface interface {
 	// PushManifest push manifest to localHelper repo
 	PushManifest(ctx context.Context, p *models.Project, repo string, tag string, mfst distribution.Manifest) error
 	// PushManifestList push manifest list to localHelper repo
-	PushManifestList(ctx context.Context, p *models.Project, repo string, tag string, art lib.ArtifactInfo, man distribution.Manifest) error
+	PushManifestList(ctx context.Context, p *models.Project, repo string, tag string, man distribution.Manifest) error
 	// CheckDependencies check if the manifest's dependency is ready
 	CheckDependencies(ctx context.Context, man distribution.Manifest, dig string, mediaType string) []distribution.Descriptor
 	// DeleteManifest cleanup delete tag from localHelper cache
@@ -145,7 +144,7 @@ func (l *localHelper) updateManifestList(ctx context.Context, manifest distribut
 	return manifest, nil
 }
 
-func (l *localHelper) PushManifestList(ctx context.Context, p *models.Project, repo string, tag string, art lib.ArtifactInfo, man distribution.Manifest) error {
+func (l *localHelper) PushManifestList(ctx context.Context, p *models.Project, repo string, tag string, man distribution.Manifest) error {
 	// For manifest list, it might include some different platforms, such as amd64, arm
 	// the client only pull one platform, such as amd64, the arm platform is not pulled.
 	// if pushing the original directly, it will fail to check the dependencies
