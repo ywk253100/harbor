@@ -28,13 +28,7 @@ import (
 	"github.com/goharbor/harbor/src/replication/adapter/harbor/v2"
 	"github.com/goharbor/harbor/src/replication/model"
 	"io"
-	"sync"
 	"time"
-)
-
-var (
-	mu       sync.Mutex
-	inflight map[string]interface{} = make(map[string]interface{})
 )
 
 // localInterface defines operations related to localHelper repo under proxy mode
@@ -110,16 +104,10 @@ func (l *localHelper) PushManifest(ctx context.Context, p *models.Project, repo 
 		tag = "latest"
 	}
 	artifact := repo + ":" + tag
-	mu.Lock()
-	_, ok := inflight[artifact]
-	if ok {
-		mu.Unlock()
-		// Skip to copy artifact if there is existing job running
+	if !inflightChecker.addRequest(artifact) {
 		return nil
 	}
-	inflight[artifact] = 1
-	mu.Unlock()
-	defer releaseLock(artifact)
+	defer inflightChecker.removeRequest(artifact)
 
 	mediaType, payload, err := mfst.Payload()
 	if err != nil {
@@ -133,12 +121,6 @@ func (l *localHelper) PushManifest(ctx context.Context, p *models.Project, repo 
 func (l *localHelper) DeleteManifest(ctx context.Context, repo, ref string) {
 	log.Debug("Remove tag from repo if it is exist")
 	// TODO: remove cached tag if it exist in cache
-}
-
-func releaseLock(artifact string) {
-	mu.Lock()
-	delete(inflight, artifact)
-	mu.Unlock()
 }
 
 // updateManifestList -- Trim the manifest list, make sure all depend manifests are ready
