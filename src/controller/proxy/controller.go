@@ -85,7 +85,7 @@ func ControllerInstance() (Controller, error) {
 
 func (c *controller) UseLocal(ctx context.Context, art lib.ArtifactInfo) bool {
 	if len(art.Digest) > 0 {
-		exist, err := c.local.BlobExist(ctx, art.Repository, art.Digest)
+		exist, err := c.local.BlobExist(ctx, art.Digest)
 		if err == nil && exist {
 			return true
 		}
@@ -106,7 +106,7 @@ func (c *controller) ProxyManifest(ctx context.Context, p *models.Project, art l
 	if err != nil {
 		if errors.IsNotFoundErr(err) {
 			go func() {
-				c.local.DeleteManifest(ctx, remoteRepo, art.Tag)
+				c.local.DeleteManifest(remoteRepo, art.Tag)
 			}()
 		}
 		return err
@@ -157,7 +157,7 @@ func (c *controller) ProxyBlob(ctx context.Context, p *models.Project, art lib.A
 	// put blob to localHelper will start another connection to the remoteHelper,
 	// to reduce the impact of it, cache the blob after it send to the client
 	go func() {
-		err := c.putBlobToLocal(ctx, remoteRepo, art.Repository, desc, r)
+		err := c.putBlobToLocal(remoteRepo, art.Repository, desc, r)
 		if err != nil {
 			log.Errorf("error while putting blob to localHelper, %v", err)
 		}
@@ -165,7 +165,7 @@ func (c *controller) ProxyBlob(ctx context.Context, p *models.Project, art lib.A
 	return nil
 }
 
-func (c *controller) putBlobToLocal(ctx context.Context, remoteRepo string, localRepo string, desc distribution.Descriptor, r remoteInterface) error {
+func (c *controller) putBlobToLocal(remoteRepo string, localRepo string, desc distribution.Descriptor, r remoteInterface) error {
 	log.Debugf("Put blob to localHelper registry!, sourceRepo:%v, localRepo:%v, digest: %v", remoteRepo, localRepo, desc.Digest)
 	_, bReader, err := r.BlobReader(remoteRepo, string(desc.Digest))
 	if err != nil {
@@ -173,7 +173,7 @@ func (c *controller) putBlobToLocal(ctx context.Context, remoteRepo string, loca
 		return err
 	}
 	defer bReader.Close()
-	err = c.local.PushBlob(ctx, localRepo, desc, bReader)
+	err = c.local.PushBlob(localRepo, desc, bReader)
 	return err
 }
 
@@ -198,7 +198,7 @@ func (c *controller) waitAndPushManifest(ctx context.Context, remoteRepo string,
 
 	for n := 0; n < maxWait; n = n + 1 {
 		time.Sleep(sleepIntervalSec * time.Second)
-		waitBlobs := c.local.CheckDependencies(ctx, art.Repository, man)
+		waitBlobs := c.local.CheckDependencies(ctx, man)
 		if len(waitBlobs) == 0 {
 			break
 		}
@@ -210,7 +210,7 @@ func (c *controller) waitAndPushManifest(ctx context.Context, remoteRepo string,
 			// need to push these blobs before push manifest to avoid failure
 			log.Debug("Waiting blobs not empty, push it to localHelper remoteRepo directly")
 			for _, desc := range waitBlobs {
-				err := c.putBlobToLocal(ctx, remoteRepo, art.Repository, desc, r)
+				err := c.putBlobToLocal(remoteRepo, art.Repository, desc, r)
 				if err != nil {
 					log.Errorf("Failed to push blob to cache error: %v", err)
 					return
@@ -218,7 +218,7 @@ func (c *controller) waitAndPushManifest(ctx context.Context, remoteRepo string,
 			}
 		}
 	}
-	err := c.local.PushManifest(ctx, art.Repository, art.Tag, man)
+	err := c.local.PushManifest(art.Repository, art.Tag, man)
 	if err != nil {
 		log.Errorf("failed to push manifest, error %v", err)
 	}
