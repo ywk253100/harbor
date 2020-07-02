@@ -33,15 +33,15 @@ import (
 // localInterface defines operations related to localHelper repo under proxy mode
 type localInterface interface {
 	// BlobExist check if the blob exist in localHelper repo
-	BlobExist(ctx context.Context, dig string) (bool, error)
+	BlobExist(ctx context.Context, repo, dig string) (bool, error)
 	// PushBlob push blob to localHelper repo
 	PushBlob(ctx context.Context, localRepo string, desc distribution.Descriptor, bReader io.ReadCloser) error
 	// PushManifest push manifest to localHelper repo
-	PushManifest(ctx context.Context, repo string, tag string, mfst distribution.Manifest) error
+	PushManifest(ctx context.Context, repo string, tag string, manifest distribution.Manifest) error
 	// PushManifestList push manifest list to localHelper repo
 	PushManifestList(ctx context.Context, repo string, tag string, man distribution.Manifest) error
 	// CheckDependencies check if the manifest's dependency is ready
-	CheckDependencies(ctx context.Context, man distribution.Manifest) []distribution.Descriptor
+	CheckDependencies(ctx context.Context, repo string, man distribution.Manifest) []distribution.Descriptor
 	// DeleteManifest cleanup delete tag from localHelper cache
 	DeleteManifest(ctx context.Context, repo, ref string)
 }
@@ -61,8 +61,11 @@ func newLocalHelper() (localInterface, error) {
 	return l, nil
 }
 
-// TODO: replace it with head request to localHelper repo
-func (l *localHelper) BlobExist(ctx context.Context, dig string) (bool, error) {
+func (l *localHelper) BlobExist(ctx context.Context, repo, dig string) (bool, error) {
+	// not using l.registry.BlobExist(repo, dig)
+	// sometimes the blob exist in storage,
+	// but it does not exist in the Harbor database.
+	// if push manifest to Harbor, it still get failed
 	return blob.Ctl.Exist(ctx, dig)
 }
 
@@ -86,8 +89,8 @@ func (l *localHelper) init() error {
 	if err != nil {
 		return err
 	}
-	adpt := v2.New(baseAdapter)
-	l.registry = adpt.(adapter.ArtifactRegistry)
+	adp := v2.New(baseAdapter)
+	l.registry = adp.(adapter.ArtifactRegistry)
 	return err
 }
 
@@ -97,7 +100,7 @@ func (l *localHelper) PushBlob(ctx context.Context, localRepo string, desc distr
 	return err
 }
 
-func (l *localHelper) PushManifest(ctx context.Context, repo string, tag string, mfst distribution.Manifest) error {
+func (l *localHelper) PushManifest(ctx context.Context, repo string, tag string, manifest distribution.Manifest) error {
 	// Make sure there is only one go routing to push current artifact to localHelper repo
 	if len(tag) == 0 {
 		// when push a manifest list, the tag is empty, for example: busybox
@@ -110,7 +113,7 @@ func (l *localHelper) PushManifest(ctx context.Context, repo string, tag string,
 	}
 	defer inflightChecker.removeRequest(artifact)
 
-	mediaType, payload, err := mfst.Payload()
+	mediaType, payload, err := manifest.Payload()
 	if err != nil {
 		return err
 	}
@@ -121,16 +124,19 @@ func (l *localHelper) PushManifest(ctx context.Context, repo string, tag string,
 // DeleteManifest cleanup delete tag from localHelper cache
 func (l *localHelper) DeleteManifest(ctx context.Context, repo, ref string) {
 	log.Debug("Remove tag from repo if it is exist")
-	// TODO: remove cached tag if it exist in cache
+	if err := l.registry.DeleteManifest(repo, ref); err != nil {
+		//sometimes user pull a non-exist image
+		log.Debugf("failed to remove artifact, error %v", err)
+	}
 }
 
 // updateManifestList -- Trim the manifest list, make sure all depend manifests are ready
-func (l *localHelper) updateManifestList(ctx context.Context, manifest distribution.Manifest) (distribution.Manifest, error) {
+func (l *localHelper) updateManifestList(ctx context.Context, repo string, manifest distribution.Manifest) (distribution.Manifest, error) {
 	switch v := manifest.(type) {
 	case *manifestlist.DeserializedManifestList:
 		existMans := make([]manifestlist.ManifestDescriptor, 0)
 		for _, m := range v.Manifests {
-			exist, err := l.BlobExist(ctx, string(m.Digest))
+			exist, err := l.BlobExist(ctx, repo, string(m.Digest))
 			if err != nil {
 				continue
 			}
@@ -153,19 +159,19 @@ func (l *localHelper) PushManifestList(ctx context.Context, repo string, tag str
 	// to avoid this error, need to update the manifest list, keep the existing platform
 	// the proxy wait 30 minutes, and push the updated manifest list in cache
 	time.Sleep(manifestListWaitSec * time.Second)
-	newMan, err := l.updateManifestList(ctx, man)
+	newMan, err := l.updateManifestList(ctx, repo, man)
 	if err != nil {
 		log.Error(err)
 	}
 	return l.PushManifest(ctx, repo, tag, newMan)
 }
 
-func (l *localHelper) CheckDependencies(ctx context.Context, man distribution.Manifest) []distribution.Descriptor {
+func (l *localHelper) CheckDependencies(ctx context.Context, repo string, man distribution.Manifest) []distribution.Descriptor {
 	descriptors := man.References()
 	waitDesc := make([]distribution.Descriptor, 0)
 	for _, desc := range descriptors {
 		log.Debugf("checking the blob dependency: %v", desc.Digest)
-		exist, err := l.BlobExist(ctx, string(desc.Digest))
+		exist, err := l.BlobExist(ctx, repo, string(desc.Digest))
 		if err != nil || !exist {
 			log.Debugf("Check dependency failed!")
 			waitDesc = append(waitDesc, desc)

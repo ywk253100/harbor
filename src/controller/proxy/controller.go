@@ -49,7 +49,7 @@ var (
 // Controller defines the operations related with pull through proxy
 type Controller interface {
 	// UseLocal check if the manifest should use localHelper
-	UseLocal(ctx context.Context, digest string) bool
+	UseLocal(ctx context.Context, art lib.ArtifactInfo) bool
 	// ProxyBlob proxy the blob request to the target server
 	ProxyBlob(ctx context.Context, p *models.Project, art lib.ArtifactInfo, w http.ResponseWriter) error
 	// ProxyManifest proxy the manifest to the target server
@@ -83,9 +83,9 @@ func ControllerInstance() (Controller, error) {
 	return ctl, nil
 }
 
-func (c *controller) UseLocal(ctx context.Context, digest string) bool {
-	if len(digest) > 0 {
-		exist, err := c.local.BlobExist(ctx, digest)
+func (c *controller) UseLocal(ctx context.Context, art lib.ArtifactInfo) bool {
+	if len(art.Digest) > 0 {
+		exist, err := c.local.BlobExist(ctx, art.Repository, art.Digest)
 		if err == nil && exist {
 			return true
 		}
@@ -113,8 +113,14 @@ func (c *controller) ProxyManifest(ctx context.Context, p *models.Project, art l
 	}
 
 	ct, payload, err := man.Payload()
+	if err != nil {
+		return err
+	}
 	setHeaders(w, int64(len(payload)), ct, art.Digest)
-	w.Write(payload)
+	_, err = w.Write(payload)
+	if err != nil {
+		return err
+	}
 
 	// Push manifest in background
 	go func() {
@@ -142,8 +148,7 @@ func (c *controller) ProxyBlob(ctx context.Context, p *models.Project, art lib.A
 		return err
 	}
 	if written != size {
-		e := errors.Errorf("The size mismatch, actual:%d, expected: %d", written, size)
-		return e
+		return errors.Errorf("The size mismatch, actual:%d, expected: %d", written, size)
 	}
 	desc.Size = size
 	desc.Digest = digest.Digest(art.Digest)
@@ -193,7 +198,7 @@ func (c *controller) waitAndPushManifest(ctx context.Context, remoteRepo string,
 
 	for n := 0; n < maxWait; n = n + 1 {
 		time.Sleep(sleepIntervalSec * time.Second)
-		waitBlobs := c.local.CheckDependencies(ctx, man)
+		waitBlobs := c.local.CheckDependencies(ctx, art.Repository, man)
 		if len(waitBlobs) == 0 {
 			break
 		}

@@ -15,6 +15,7 @@
 package proxy
 
 import (
+	"fmt"
 	"github.com/docker/distribution"
 	"github.com/goharbor/harbor/src/lib/log"
 	"github.com/goharbor/harbor/src/replication/adapter"
@@ -51,6 +52,12 @@ func (r *remoteHelper) init() error {
 		return nil
 	}
 	reg, err := registry.NewDefaultManager().Get(r.regID)
+	if err != nil {
+		return err
+	}
+	if reg == nil {
+		return fmt.Errorf("failed to get registry, registryID: %v", r.regID)
+	}
 	factory, err := adapter.GetFactory(reg.Type)
 	if err != nil {
 		return err

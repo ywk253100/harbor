@@ -18,7 +18,7 @@ import (
 	"github.com/go-openapi/errors"
 	"github.com/goharbor/harbor/src/replication/model"
 	"github.com/goharbor/harbor/src/replication/registry"
-	serror "github.com/goharbor/harbor/src/server/error"
+	serverError "github.com/goharbor/harbor/src/server/error"
 	"net/http"
 	"strings"
 
@@ -40,23 +40,23 @@ func BlobGetMiddleware() func(http.Handler) http.Handler {
 		art := lib.GetArtifactInfo(ctx)
 		p, err := project.Ctl.GetByName(ctx, art.ProjectName, project.Metadata(false))
 		if err != nil {
-			serror.SendError(w, err)
+			serverError.SendError(w, err)
 			return
 		}
 
 		proxyCtl, err := proxy.ControllerInstance()
 		if err != nil {
-			serror.SendError(w, err)
+			serverError.SendError(w, err)
 			return
 		}
 
-		if canProxy(p) == false || proxyCtl.UseLocal(ctx, art.Digest) {
+		if canProxy(p) == false || proxyCtl.UseLocal(ctx, art) {
 			next.ServeHTTP(w, r)
 			return
 		}
 		err = proxyCtl.ProxyBlob(ctx, p, art, w)
 		if err != nil {
-			serror.SendError(w, err)
+			serverError.SendError(w, err)
 			return
 		}
 		return
@@ -70,29 +70,29 @@ func ManifestGetMiddleware() func(http.Handler) http.Handler {
 		art := lib.GetArtifactInfo(ctx)
 		p, err := project.Ctl.GetByName(ctx, art.ProjectName)
 		if err != nil {
-			serror.SendError(w, err)
+			serverError.SendError(w, err)
 			return
 		}
 		proxyCtl, err := proxy.ControllerInstance()
 		if err != nil {
-			serror.SendError(w, err)
+			serverError.SendError(w, err)
 			return
 		}
 
-		if !canProxy(p) || proxyCtl.UseLocal(ctx, art.Digest) {
+		if !canProxy(p) || proxyCtl.UseLocal(ctx, art) {
 			next.ServeHTTP(w, r)
 			return
 		}
 
 		if !validProxyRepo(art.Repository) {
-			serror.SendError(w, errors.NotFound("repository %v not found", art.Repository))
+			serverError.SendError(w, errors.NotFound("repository %v not found", art.Repository))
 			return
 		}
 
-		log.Debugf("the digest is %v", string(art.Digest))
+		log.Debugf("the digest is %v", art.Digest)
 		err = proxyCtl.ProxyManifest(ctx, p, art, w)
 		if err != nil {
-			serror.SendError(w, err)
+			serverError.SendError(w, err)
 			return
 		}
 	})
