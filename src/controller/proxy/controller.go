@@ -220,6 +220,6 @@ func (c *controller) waitAndPushManifest(ctx context.Context, remoteRepo string,
 	}
 	err := c.local.PushManifest(art.Repository, art.Tag, man)
 	if err != nil {
-		log.Errorf("failed to push manifest, error %v", err)
+		log.Errorf("failed to push manifest, tag: %v, error %v", art.Tag, err)
 	}
 }
