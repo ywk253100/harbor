@@ -27,6 +27,7 @@ import (
 	"github.com/goharbor/harbor/src/lib/log"
 	"github.com/goharbor/harbor/src/replication/registry"
 	"github.com/opencontainers/go-digest"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"io"
 	"net/http"
 	"strings"
@@ -64,7 +65,7 @@ type controller struct {
 
 func ControllerInstance() Controller {
 	// Lazy load the controller
-	// Because LocalHelper is not ready when core doesn't startup completely
+	// Because LocalHelper is not ready unless core startup completely
 	ctlLock.Lock()
 	defer ctlLock.Unlock()
 	if ctl == nil {
@@ -178,7 +179,7 @@ func setHeaders(w http.ResponseWriter, size int64, mediaType string, dig string)
 
 func (c *controller) waitAndPushManifest(ctx context.Context, remoteRepo string, man distribution.Manifest, art lib.ArtifactInfo, contType string, r remoteInterface) {
 
-	if contType == manifestlist.MediaTypeManifestList {
+	if contType == manifestlist.MediaTypeManifestList || contType == v1.MediaTypeImageIndex {
 		err := c.local.PushManifestList(ctx, art.Repository, art.Tag, man)
 		if err != nil {
 			log.Errorf("error when push manifest list to localHelper:%v", err)
@@ -192,7 +193,7 @@ func (c *controller) waitAndPushManifest(ctx context.Context, remoteRepo string,
 		if len(waitBlobs) == 0 {
 			break
 		}
-		log.Debugf("Current n=%v", n)
+		log.Debugf("Current n=%v artifact: %v:%v", n, art.Repository, art.Tag)
 		if n+1 == maxWait && len(waitBlobs) > 0 {
 			// docker client will skip to pull layers exist in localHelper
 			// these blobs is not exist in the proxy server
@@ -215,10 +216,5 @@ func (c *controller) waitAndPushManifest(ctx context.Context, remoteRepo string,
 }
 
 func remoteRepoFromArtifactInfo(art lib.ArtifactInfo) string {
-	repo := art.Repository
-	projectName := art.ProjectName
-	if strings.HasPrefix(repo, projectName+"/") {
-		return strings.TrimPrefix(repo, projectName+"/")
-	}
-	return repo
+	return strings.TrimPrefix(art.Repository, art.ProjectName+"/")
 }
