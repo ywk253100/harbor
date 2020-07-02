@@ -15,10 +15,12 @@
 package repoproxy
 
 import (
+	"github.com/go-openapi/errors"
 	"github.com/goharbor/harbor/src/replication/model"
 	"github.com/goharbor/harbor/src/replication/registry"
 	serror "github.com/goharbor/harbor/src/server/error"
 	"net/http"
+	"strings"
 
 	"github.com/goharbor/harbor/src/common/models"
 	"github.com/goharbor/harbor/src/controller/project"
@@ -82,6 +84,11 @@ func ManifestGetMiddleware() func(http.Handler) http.Handler {
 			return
 		}
 
+		if !validProxyRepo(art.Repository) {
+			serror.SendError(w, errors.NotFound("repository %v not found", art.Repository))
+			return
+		}
+
 		log.Debugf("the digest is %v", string(art.Digest))
 		err = proxyCtl.ProxyManifest(ctx, p, art, w)
 		if err != nil {
@@ -101,4 +108,8 @@ func canProxy(p *models.Project) bool {
 		return false
 	}
 	return reg.Status == model.Healthy
+}
+
+func validProxyRepo(repo string) bool {
+	return strings.Count(repo, "/") > 1
 }

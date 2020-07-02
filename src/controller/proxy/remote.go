@@ -36,8 +36,8 @@ type remoteHelper struct {
 	registry adapter.ArtifactRegistry
 }
 
-// NewRemoteHelper create a remoteHelper interface
-func NewRemoteHelper(regID int64) remoteInterface {
+// newRemoteHelper create a remoteHelper interface
+func newRemoteHelper(regID int64) remoteInterface {
 	r := &remoteHelper{regID: regID}
 	if err := r.init(); err != nil {
 		log.Errorf("failed to create remoteHelper error %v", err)

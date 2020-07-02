@@ -30,7 +30,6 @@ import (
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"io"
 	"net/http"
-	"strings"
 	"sync"
 	"time"
 )
@@ -63,13 +62,14 @@ type controller struct {
 	local       localInterface
 }
 
+// ControllerInstance -- Get the proxy controller instance
 func ControllerInstance() (Controller, error) {
 	// Lazy load the controller
 	// Because LocalHelper is not ready unless core startup completely
 	ctlLock.Lock()
 	defer ctlLock.Unlock()
 	if ctl == nil {
-		helper, err := NewLocalHelper()
+		helper, err := newLocalHelper()
 		if err != nil {
 			return nil, err
 		}
@@ -96,8 +96,8 @@ func (c *controller) UseLocal(ctx context.Context, digest string) bool {
 func (c *controller) ProxyManifest(ctx context.Context, p *models.Project, art lib.ArtifactInfo, w http.ResponseWriter) error {
 	var man distribution.Manifest
 	var err error
-	remoteRepo := remoteRepoFromArtifactInfo(art)
-	r := NewRemoteHelper(p.RegistryID)
+	remoteRepo := art.ProxyCacheRemoteRepo()
+	r := newRemoteHelper(p.RegistryID)
 	ref := art.Digest
 	if len(ref) == 0 {
 		ref = art.Tag
@@ -125,9 +125,9 @@ func (c *controller) ProxyManifest(ctx context.Context, p *models.Project, art l
 }
 
 func (c *controller) ProxyBlob(ctx context.Context, p *models.Project, art lib.ArtifactInfo, w http.ResponseWriter) error {
-	remoteRepo := remoteRepoFromArtifactInfo(art)
+	remoteRepo := art.ProxyCacheRemoteRepo()
 	log.Debugf("The blob doesn't exist, proxy the request to the target server, url:%v", remoteRepo)
-	r := NewRemoteHelper(p.RegistryID)
+	r := newRemoteHelper(p.RegistryID)
 	desc := distribution.Descriptor{}
 	size, bReader, err := r.BlobReader(remoteRepo, art.Digest)
 	if err != nil {
@@ -217,8 +217,4 @@ func (c *controller) waitAndPushManifest(ctx context.Context, remoteRepo string,
 	if err != nil {
 		log.Errorf("failed to push manifest, error %v", err)
 	}
-}
-
-func remoteRepoFromArtifactInfo(art lib.ArtifactInfo) string {
-	return strings.TrimPrefix(art.Repository, art.ProjectName+"/")
 }

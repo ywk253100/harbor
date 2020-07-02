@@ -16,6 +16,7 @@ package lib
 
 import (
 	"context"
+	"strings"
 )
 
 type contextKey string
@@ -38,6 +39,11 @@ type ArtifactInfo struct {
 	BlobMountRepository  string
 	BlobMountProjectName string
 	BlobMountDigest      string
+}
+
+// ProxyCacheRemoteRepo get the remote repository name, used in proxy cache
+func (a *ArtifactInfo) ProxyCacheRemoteRepo() string {
+	return strings.TrimPrefix(a.Repository, a.ProjectName+"/")
 }
 
 func setToContext(ctx context.Context, key contextKey, value interface{}) context.Context {

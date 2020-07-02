@@ -12,29 +12,38 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-package proxy
+package repoproxy
 
-import (
-	"github.com/goharbor/harbor/src/lib"
-	"testing"
-)
+import "testing"
 
-func TestRemoteRepoFromArtifactInfo(t *testing.T) {
+func TestValidProxyPath(t *testing.T) {
 	cases := []struct {
 		name string
-		in   lib.ArtifactInfo
-		want string
+		in   string
+		want bool
 	}{
 		{
-			name: `normal test`,
-			in:   lib.ArtifactInfo{ProjectName: "dockerhub_proxy", Repository: "dockerhub_proxy/firstfloor/hello-world"},
-			want: "firstfloor/hello-world",
+			name: `normal`,
+			in:   "dockerhub_proxy/library/hello-world",
+			want: true,
+		},
+		{
+			name: `invalid`,
+			in:   "dockerhub_proxy/hello-world",
+			want: false,
+		},
+		{
+			name: `nested`,
+			in:   "dockerhub_proxy/library/example/hello-world",
+			want: true,
 		},
 	}
 
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
-			got := remoteRepoFromArtifactInfo(tt.in)
+
+			got := validProxyRepo(tt.in)
+
 			if got != tt.want {
 				t.Errorf(`(%v) = %v; want "%v"`, tt.in, got, tt.want)
 			}

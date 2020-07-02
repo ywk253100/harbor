@@ -39,3 +39,29 @@ func TestGetAPIVersion(t *testing.T) {
 	version = GetAPIVersion(ctx)
 	assert.Equal(t, "1.0", version)
 }
+
+func TestRemoteRepo(t *testing.T) {
+
+	cases := []struct {
+		name string
+		in   ArtifactInfo
+		want string
+	}{
+		{
+			name: `normal test`,
+			in:   ArtifactInfo{ProjectName: "dockerhub_proxy", Repository: "dockerhub_proxy/firstfloor/hello-world"},
+			want: "firstfloor/hello-world",
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.in.ProxyCacheRemoteRepo()
+			if got != tt.want {
+				t.Errorf(`(%v) = %v; want "%v"`, tt.in, got, tt.want)
+			}
+
+		})
+	}
+
+}

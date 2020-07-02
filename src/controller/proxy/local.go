@@ -51,8 +51,8 @@ type localHelper struct {
 	registry adapter.ArtifactRegistry
 }
 
-// NewLocalHelper create the localInterface
-func NewLocalHelper() (localInterface, error) {
+// newLocalHelper create the localInterface
+func newLocalHelper() (localInterface, error) {
 	l := &localHelper{}
 	if err := l.init(); err != nil {
 		log.Errorf("Failed to init localHelper, error %v", err)
