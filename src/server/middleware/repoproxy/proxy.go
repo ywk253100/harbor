@@ -41,11 +41,18 @@ func BlobGetMiddleware() func(http.Handler) http.Handler {
 			serror.SendError(w, err)
 			return
 		}
-		if canProxy(p) == false || proxy.ControllerInstance().UseLocal(ctx, art.Digest) {
+
+		proxyCtl, err := proxy.ControllerInstance()
+		if err != nil {
+			serror.SendError(w, err)
+			return
+		}
+
+		if canProxy(p) == false || proxyCtl.UseLocal(ctx, art.Digest) {
 			next.ServeHTTP(w, r)
 			return
 		}
-		err = proxy.ControllerInstance().ProxyBlob(ctx, p, art, w)
+		err = proxyCtl.ProxyBlob(ctx, p, art, w)
 		if err != nil {
 			serror.SendError(w, err)
 			return
@@ -64,14 +71,19 @@ func ManifestGetMiddleware() func(http.Handler) http.Handler {
 			serror.SendError(w, err)
 			return
 		}
+		proxyCtl, err := proxy.ControllerInstance()
+		if err != nil {
+			serror.SendError(w, err)
+			return
+		}
 
-		if !canProxy(p) || proxy.ControllerInstance().UseLocal(ctx, art.Digest) {
+		if !canProxy(p) || proxyCtl.UseLocal(ctx, art.Digest) {
 			next.ServeHTTP(w, r)
 			return
 		}
 
 		log.Debugf("the digest is %v", string(art.Digest))
-		err = proxy.ControllerInstance().ProxyManifest(ctx, p, art, w)
+		err = proxyCtl.ProxyManifest(ctx, p, art, w)
 		if err != nil {
 			serror.SendError(w, err)
 			return

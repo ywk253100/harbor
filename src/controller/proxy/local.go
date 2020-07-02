@@ -16,6 +16,7 @@ package proxy
 
 import (
 	"context"
+	"fmt"
 	"github.com/docker/distribution"
 	"github.com/docker/distribution/manifest/manifestlist"
 	"github.com/goharbor/harbor/src/controller/blob"
@@ -51,12 +52,13 @@ type localHelper struct {
 }
 
 // NewLocalHelper create the localInterface
-func NewLocalHelper() localInterface {
+func NewLocalHelper() (localInterface, error) {
 	l := &localHelper{}
 	if err := l.init(); err != nil {
 		log.Errorf("Failed to init localHelper, error %v", err)
+		return nil, fmt.Errorf("failed to initialize the local helper")
 	}
-	return l
+	return l, nil
 }
 
 // TODO: replace it with head request to localHelper repo

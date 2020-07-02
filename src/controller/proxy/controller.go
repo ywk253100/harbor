@@ -63,20 +63,24 @@ type controller struct {
 	local       localInterface
 }
 
-func ControllerInstance() Controller {
+func ControllerInstance() (Controller, error) {
 	// Lazy load the controller
 	// Because LocalHelper is not ready unless core startup completely
 	ctlLock.Lock()
 	defer ctlLock.Unlock()
 	if ctl == nil {
+		helper, err := NewLocalHelper()
+		if err != nil {
+			return nil, err
+		}
 		ctl = &controller{
 			blobCtl:     blob.Ctl,
 			registryMgr: registry.NewDefaultManager(),
 			artifactCtl: artifact.Ctl,
-			local:       NewLocalHelper(),
+			local:       helper,
 		}
 	}
-	return ctl
+	return ctl, nil
 }
 
 func (c *controller) UseLocal(ctx context.Context, digest string) bool {
