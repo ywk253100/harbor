@@ -42,8 +42,8 @@ const (
 
 var (
 	// Ctl is a global proxy controller instance
-	ctl     Controller
-	ctlLock sync.Mutex
+	ctl  Controller
+	once sync.Once
 )
 
 // Controller defines the operations related with pull through proxy
@@ -66,19 +66,19 @@ type controller struct {
 func ControllerInstance() (Controller, error) {
 	// Lazy load the controller
 	// Because LocalHelper is not ready unless core startup completely
-	ctlLock.Lock()
-	defer ctlLock.Unlock()
 	if ctl == nil {
 		helper, err := newLocalHelper()
 		if err != nil {
 			return nil, err
 		}
-		ctl = &controller{
-			blobCtl:     blob.Ctl,
-			registryMgr: registry.NewDefaultManager(),
-			artifactCtl: artifact.Ctl,
-			local:       helper,
-		}
+		once.Do(func() {
+			ctl = &controller{
+				blobCtl:     blob.Ctl,
+				registryMgr: registry.NewDefaultManager(),
+				artifactCtl: artifact.Ctl,
+				local:       helper,
+			}
+		})
 	}
 	return ctl, nil
 }
