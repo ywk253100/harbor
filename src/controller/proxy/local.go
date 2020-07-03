@@ -19,13 +19,11 @@ import (
 	"fmt"
 	"github.com/docker/distribution"
 	"github.com/docker/distribution/manifest/manifestlist"
+	common_http_auth "github.com/goharbor/harbor/src/common/http/modifier/auth"
 	"github.com/goharbor/harbor/src/controller/blob"
 	"github.com/goharbor/harbor/src/core/config"
 	"github.com/goharbor/harbor/src/lib/log"
-	"github.com/goharbor/harbor/src/replication/adapter"
-	"github.com/goharbor/harbor/src/replication/adapter/harbor/base"
-	"github.com/goharbor/harbor/src/replication/adapter/harbor/v2"
-	"github.com/goharbor/harbor/src/replication/model"
+	"github.com/goharbor/harbor/src/pkg/registry"
 	"io"
 	"time"
 )
@@ -48,7 +46,7 @@ type localInterface interface {
 
 // localHelper defines operations related to localHelper repo under proxy mode
 type localHelper struct {
-	registry adapter.ArtifactRegistry
+	registry registry.Client
 }
 
 // newLocalHelper create the localInterface
@@ -78,22 +76,9 @@ func (l *localHelper) init() error {
 	registryURL := config.LocalCoreURL() //127.0.0.1:8080
 	// TODO: need to verify it works
 	// registryURL := config.GetCoreURL()
-	reg := &model.Registry{
-		URL: registryURL,
-		Credential: &model.Credential{
-			Type:         model.CredentialTypeSecret,
-			AccessSecret: config.ProxyServiceSecret,
-		},
-		TokenServiceURL: registryURL + "/service/token",
-		Insecure:        true,
-	}
-	baseAdapter, err := base.New(reg)
-	if err != nil {
-		return err
-	}
-	adp := v2.New(baseAdapter)
-	l.registry = adp.(adapter.ArtifactRegistry)
-	return err
+	authorizer := common_http_auth.NewSecretAuthorizer(config.ProxyServiceSecret)
+	l.registry = registry.NewClientWithAuthorizer(registryURL, authorizer, true)
+	return nil
 }
 
 func (l *localHelper) PushBlob(localRepo string, desc distribution.Descriptor, bReader io.ReadCloser) error {
