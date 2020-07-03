@@ -75,7 +75,7 @@ func (l *localHelper) init() error {
 	}
 	log.Debugf("core url:%s, localHelper core url: %v", config.GetCoreURL(), config.LocalCoreURL())
 	// the traffic is internal only
-	registryURL := config.LocalCoreURL()
+	registryURL := config.LocalCoreURL() //127.0.0.1:8080
 	// TODO: need to verify it works
 	// registryURL := config.GetCoreURL()
 	reg := &model.Registry{
@@ -84,7 +84,8 @@ func (l *localHelper) init() error {
 			Type:         model.CredentialTypeSecret,
 			AccessSecret: config.ProxyServiceSecret,
 		},
-		Insecure: true,
+		TokenServiceURL: registryURL + "/service/token",
+		Insecure:        true,
 	}
 	baseAdapter, err := base.New(reg)
 	if err != nil {
