@@ -62,7 +62,7 @@ type Task struct {
 	StatusCode     int       `orm:"column(status_code)"`
 	StatusRevision int64     `orm:"column(status_revision)"`
 	StatusMessage  string    `orm:"column(status_message)"`
-	RunCount       int       `orm:"column(run_count)"`
+	RunCount       int32     `orm:"column(run_count)"`
 	ExtraAttrs     string    `orm:"column(extra_attrs)"` // json string
 	CreationTime   time.Time `orm:"column(creation_time)"`
 	StartTime      time.Time `orm:"column(start_time)"`

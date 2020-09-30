@@ -22,7 +22,6 @@ import (
 	"github.com/goharbor/harbor/src/lib/log"
 	"github.com/goharbor/harbor/src/replication/config"
 	"github.com/goharbor/harbor/src/replication/event"
-	"github.com/goharbor/harbor/src/replication/operation"
 	"github.com/goharbor/harbor/src/replication/policy"
 	"github.com/goharbor/harbor/src/replication/policy/controller"
 	"github.com/goharbor/harbor/src/replication/registry"
@@ -60,8 +59,6 @@ var (
 	PolicyCtl policy.Controller
 	// RegistryMgr is a global registry manager
 	RegistryMgr registry.Manager
-	// OperationCtl is a global operation controller
-	OperationCtl operation.Controller
 	// EventHandler handles images/chart pull/push events
 	EventHandler event.Handler
 )
@@ -87,10 +84,8 @@ func Init(closing, done chan struct{}) error {
 	RegistryMgr = registry.NewDefaultManager()
 	// init policy controller
 	PolicyCtl = controller.NewController(js)
-	// init operation controller
-	OperationCtl = operation.NewController(js)
 	// init event handler
-	EventHandler = event.NewHandler(PolicyCtl, RegistryMgr, OperationCtl)
+	EventHandler = event.NewHandler(PolicyCtl, RegistryMgr)
 	log.Debug("the replication initialization completed")
 
 	// Start health checker for registries

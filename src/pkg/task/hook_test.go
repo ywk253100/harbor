@@ -43,7 +43,8 @@ func (h *hookHandlerTestSuite) SetupTest() {
 
 func (h *hookHandlerTestSuite) TestHandle() {
 	// handle check in data
-	registry["test"] = func(ctx context.Context, task *Task, change *job.StatusChange) (err error) { return nil }
+	checkInProcessorRegistry["test"] = func(ctx context.Context, task *Task, data string) (err error) { return nil }
+	defer delete(checkInProcessorRegistry, "test")
 	h.taskDAO.On("Get", mock.Anything, mock.Anything).Return(&dao.Task{
 		ID:          1,
 		ExecutionID: 1,
@@ -69,7 +70,11 @@ func (h *hookHandlerTestSuite) TestHandle() {
 		ExecutionID: 1,
 	}, nil)
 	h.taskDAO.On("UpdateStatus", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	h.execDAO.On("RefreshStatus", mock.Anything, mock.Anything).Return(nil)
+	h.execDAO.On("Get", mock.Anything, mock.Anything).Return(&dao.Execution{
+		ID:         1,
+		VendorType: "test",
+	}, nil)
+	h.execDAO.On("RefreshStatus", mock.Anything, mock.Anything).Return(true, job.RunningStatus.String(), nil)
 	sc = &job.StatusChange{
 		Status: job.SuccessStatus.String(),
 		Metadata: &job.StatsInfo{
@@ -79,6 +84,7 @@ func (h *hookHandlerTestSuite) TestHandle() {
 	err = h.handler.Handle(nil, 1, sc)
 	h.Require().Nil(err)
 	h.taskDAO.AssertExpectations(h.T())
+	h.execDAO.AssertExpectations(h.T())
 }
 
 func TestHookHandlerTestSuite(t *testing.T) {

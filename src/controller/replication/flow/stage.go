@@ -15,17 +15,12 @@
 package flow
 
 import (
-	"errors"
 	"fmt"
-	"github.com/goharbor/harbor/src/replication/filter"
-	"time"
 
 	"github.com/goharbor/harbor/src/lib/log"
 	adp "github.com/goharbor/harbor/src/replication/adapter"
-	"github.com/goharbor/harbor/src/replication/dao/models"
+	"github.com/goharbor/harbor/src/replication/filter"
 	"github.com/goharbor/harbor/src/replication/model"
-	"github.com/goharbor/harbor/src/replication/operation/execution"
-	"github.com/goharbor/harbor/src/replication/operation/scheduler"
 	"github.com/goharbor/harbor/src/replication/util"
 )
 
@@ -169,108 +164,6 @@ func prepareForPush(adapter adp.Adapter, resources []*model.Resource) error {
 	}
 	log.Debug("the prepare work for pushing/uploading resources completed")
 	return nil
-}
-
-// preprocess
-func preprocess(scheduler scheduler.Scheduler, srcResources, dstResources []*model.Resource) ([]*scheduler.ScheduleItem, error) {
-	items, err := scheduler.Preprocess(srcResources, dstResources)
-	if err != nil {
-		return nil, fmt.Errorf("failed to preprocess the resources: %v", err)
-	}
-	log.Debug("preprocess the resources completed")
-	return items, nil
-}
-
-// create task records in database
-func createTasks(mgr execution.Manager, executionID int64, items []*scheduler.ScheduleItem) error {
-	for _, item := range items {
-		operation := "copy"
-		if item.DstResource.Deleted {
-			operation = "deletion"
-			if item.DstResource.IsDeleteTag {
-				operation = "tag deletion"
-			}
-		}
-
-		task := &models.Task{
-			ExecutionID:  executionID,
-			Status:       models.TaskStatusInitialized,
-			ResourceType: string(item.SrcResource.Type),
-			SrcResource:  getResourceName(item.SrcResource),
-			DstResource:  getResourceName(item.DstResource),
-			Operation:    operation,
-		}
-
-		id, err := mgr.CreateTask(task)
-		if err != nil {
-			// if failed to create the task for one of the items,
-			// the whole execution is marked as failure and all
-			// the items will not be submitted
-			return fmt.Errorf("failed to create task records for the execution %d: %v", executionID, err)
-		}
-
-		item.TaskID = id
-		log.Debugf("task record %d for the execution %d created", id, executionID)
-	}
-	return nil
-}
-
-// schedule the replication tasks and update the task's status
-// returns the count of tasks which have been scheduled and the error
-func schedule(scheduler scheduler.Scheduler, executionMgr execution.Manager, items []*scheduler.ScheduleItem) (int, error) {
-	results, err := scheduler.Schedule(items)
-	if err != nil {
-		return 0, fmt.Errorf("failed to schedule the tasks: %v", err)
-	}
-
-	allFailed := true
-	n := len(results)
-	for _, result := range results {
-		// if the task is failed to be submitted, update the status of the
-		// task as failure
-		now := time.Now()
-		if result.Error != nil {
-			log.Errorf("failed to schedule the task %d: %v", result.TaskID, result.Error)
-			if err = executionMgr.UpdateTask(&models.Task{
-				ID:      result.TaskID,
-				Status:  models.TaskStatusFailed,
-				EndTime: now,
-			}, "Status", "EndTime"); err != nil {
-				log.Errorf("failed to update the task status %d: %v", result.TaskID, err)
-			}
-			continue
-		}
-		allFailed = false
-		// if the task is submitted successfully, update the status, job ID and start time
-		if err = executionMgr.UpdateTaskStatus(result.TaskID, models.TaskStatusPending, 0, models.TaskStatusInitialized); err != nil {
-			log.Errorf("failed to update the task status %d: %v", result.TaskID, err)
-		}
-		if err = executionMgr.UpdateTask(&models.Task{
-			ID:        result.TaskID,
-			JobID:     result.JobID,
-			StartTime: now,
-		}, "JobID", "StartTime"); err != nil {
-			log.Errorf("failed to update the task %d: %v", result.TaskID, err)
-		}
-		log.Debugf("the task %d scheduled", result.TaskID)
-	}
-	// if all the tasks are failed, return err
-	if allFailed {
-		return n, errors.New("all tasks are failed")
-	}
-	return n, nil
-}
-
-// check whether the execution is stopped
-func isExecutionStopped(mgr execution.Manager, id int64) (bool, error) {
-	execution, err := mgr.Get(id)
-	if err != nil {
-		return false, err
-	}
-	if execution == nil {
-		return false, fmt.Errorf("execution %d not found", id)
-	}
-	return execution.Status == models.ExecutionStatusStopped, nil
 }
 
 // return the name with format "res_name" or "res_name:[vtag1,vtag2,vtag3]"

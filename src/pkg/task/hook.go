@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/goharbor/harbor/src/jobservice/job"
+	"github.com/goharbor/harbor/src/lib/log"
 	"github.com/goharbor/harbor/src/pkg/task/dao"
 )
 
@@ -38,30 +39,47 @@ type HookHandler struct {
 
 // Handle the job status changing webhook
 func (h *HookHandler) Handle(ctx context.Context, taskID int64, sc *job.StatusChange) error {
+	logger := log.GetLogger(ctx)
 	task, err := h.taskDAO.Get(ctx, taskID)
+	if err != nil {
+		return err
+	}
+	execution, err := h.executionDAO.Get(ctx, task.ExecutionID)
 	if err != nil {
 		return err
 	}
 	// process check in data
 	if len(sc.CheckIn) > 0 {
-		execution, err := h.executionDAO.Get(ctx, task.ExecutionID)
-		if err != nil {
-			return err
-		}
-
-		processor, exist := registry[execution.VendorType]
+		processor, exist := checkInProcessorRegistry[execution.VendorType]
 		if !exist {
 			return fmt.Errorf("the check in processor for task %d not found", taskID)
 		}
 		t := &Task{}
 		t.From(task)
-		return processor(ctx, t, sc)
+		return processor(ctx, t, sc.CheckIn)
 	}
 
 	// update task status
 	if err = h.taskDAO.UpdateStatus(ctx, taskID, sc.Status, sc.Metadata.Revision); err != nil {
 		return err
 	}
+	// run the status change post function
+	if fc, exist := statusChangePostFuncRegistry[execution.VendorType]; exist {
+		if err = fc(ctx, taskID, sc.Status); err != nil {
+			logger.Errorf("failed to run the task status change post function for task %d: %v", taskID, err)
+		}
+	}
+
 	// update execution status
-	return h.executionDAO.RefreshStatus(ctx, task.ExecutionID)
+	statusChanged, currentStatus, err := h.executionDAO.RefreshStatus(ctx, task.ExecutionID)
+	if err != nil {
+		return err
+	}
+	// run the status change post function
+	if fc, exist := executionStatusChangePostFuncRegistry[execution.VendorType]; exist && statusChanged {
+		if err = fc(ctx, task.ExecutionID, currentStatus); err != nil {
+			logger.Errorf("failed to run the execution status change post function for execution %d: %v", task.ExecutionID, err)
+		}
+	}
+	return nil
 }

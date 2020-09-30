@@ -22,6 +22,7 @@ import (
 	"github.com/goharbor/harbor/src/common/models"
 	"github.com/goharbor/harbor/src/controller/event"
 	"github.com/goharbor/harbor/src/controller/project"
+	rep "github.com/goharbor/harbor/src/controller/replication"
 	"github.com/goharbor/harbor/src/core/config"
 	"github.com/goharbor/harbor/src/lib/q"
 	"github.com/goharbor/harbor/src/pkg/notification"
@@ -29,6 +30,7 @@ import (
 	daoModels "github.com/goharbor/harbor/src/replication/dao/models"
 	"github.com/goharbor/harbor/src/replication/model"
 	projecttesting "github.com/goharbor/harbor/src/testing/controller/project"
+	replicationtesting "github.com/goharbor/harbor/src/testing/controller/replication"
 	"github.com/goharbor/harbor/src/testing/mock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -213,24 +215,27 @@ func TestReplicationHandler_Handle(t *testing.T) {
 	config.Init()
 
 	PolicyMgr := notification.PolicyMgr
-	execution := replication.OperationCtl
 	rpPolicy := replication.PolicyCtl
 	rpRegistry := replication.RegistryMgr
 	prj := project.Ctl
+	repCtl := rep.Ctl
 
 	defer func() {
 		notification.PolicyMgr = PolicyMgr
-		replication.OperationCtl = execution
 		replication.PolicyCtl = rpPolicy
 		replication.RegistryMgr = rpRegistry
 		project.Ctl = prj
+		rep.Ctl = repCtl
 	}()
 	notification.PolicyMgr = &fakedNotificationPolicyMgr{}
-	replication.OperationCtl = &fakedReplicationMgr{}
 	replication.PolicyCtl = &fakedReplicationPolicyMgr{}
 	replication.RegistryMgr = &fakedReplicationRegistryMgr{}
 	projectCtl := &projecttesting.Controller{}
 	project.Ctl = projectCtl
+	mockRepCtl := &replicationtesting.Controller{}
+	rep.Ctl = mockRepCtl
+	mockRepCtl.On("GetTask", mock.Anything, mock.Anything).Return(&rep.Task{}, nil)
+	mockRepCtl.On("GetExecution", mock.Anything, mock.Anything).Return(&rep.Execution{}, nil)
 
 	mock.OnAnything(projectCtl, "GetByName").Return(&models.Project{ProjectID: 1}, nil)
 

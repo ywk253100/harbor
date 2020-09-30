@@ -14,24 +14,15 @@
 
 package flow
 
-// Flow defines the replication flow
-type Flow interface {
-	// returns the count of tasks which have been scheduled and the error
-	Run(interface{}) (int, error)
+import (
+	"github.com/goharbor/harbor/src/replication/adapter"
+)
+
+// define a new interface to combine the two interfaces of adapter for mockery to generate the mocks
+type registryAdapter interface {
+	adapter.Adapter
+	adapter.ArtifactRegistry
 }
 
-// Controller is the controller that controls the replication flows
-type Controller interface {
-	Start(Flow) (int, error)
-}
-
-// NewController returns an instance of the default flow controller
-func NewController() Controller {
-	return &controller{}
-}
-
-type controller struct{}
-
-func (c *controller) Start(flow Flow) (int, error) {
-	return flow.Run(nil)
-}
+//go:generate mockery --dir . --name registryAdapter --output . --outpkg flow --filename mock_adapter_test.go --structname mockAdapter
+//go:generate mockery --dir ../../../replication/adapter --name Factory --output . --outpkg flow --filename mock_adapter_factory_test.go --structname mockFactory

@@ -12,25 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package flow
+package replication
 
-import (
-	"testing"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-)
-
-type fakedFlow struct{}
-
-func (f *fakedFlow) Run(interface{}) (int, error) {
-	return 1, nil
-}
-
-func TestStart(t *testing.T) {
-	flow := &fakedFlow{}
-	controller := NewController()
-	n, err := controller.Start(flow)
-	require.Nil(t, err)
-	assert.Equal(t, 1, n)
-}
+//go:generate mockery --dir ./flow --name Controller --output . --outpkg replication --filename mock_flow_controller_test.go --structname flowController

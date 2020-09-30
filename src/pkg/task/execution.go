@@ -100,6 +100,7 @@ func (e *executionManager) Create(ctx context.Context, vendorType string, vendor
 	execution := &dao.Execution{
 		VendorType: vendorType,
 		VendorID:   vendorID,
+		Status:     job.RunningStatus.String(),
 		Trigger:    trigger,
 		ExtraAttrs: string(data),
 		StartTime:  time.Now(),

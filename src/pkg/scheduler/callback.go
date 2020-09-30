@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/goharbor/harbor/src/jobservice/job"
 	"github.com/goharbor/harbor/src/lib/errors"
 	"github.com/goharbor/harbor/src/lib/log"
 	"github.com/goharbor/harbor/src/pkg/task"
@@ -68,7 +67,7 @@ func callbackFuncExist(name string) bool {
 	return exist
 }
 
-func triggerCallback(ctx context.Context, task *task.Task, change *job.StatusChange) (err error) {
+func triggerCallback(ctx context.Context, task *task.Task, data string) (err error) {
 	execution, err := Sched.(*scheduler).execMgr.Get(ctx, task.ExecutionID)
 	if err != nil {
 		return err

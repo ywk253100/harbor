@@ -140,7 +140,7 @@ func (t *taskDAOTestSuite) TestUpdateStatus() {
 
 	task, err := t.taskDAO.Get(t.ctx, t.taskID)
 	t.Require().Nil(err)
-	t.Equal(1, task.RunCount)
+	t.Equal(int32(1), task.RunCount)
 	t.True(time.Unix(statusRevision, 0).Equal(task.StartTime))
 	t.Equal(status, task.Status)
 	t.Equal(job.RunningStatus.Code(), task.StatusCode)
@@ -155,7 +155,7 @@ func (t *taskDAOTestSuite) TestUpdateStatus() {
 
 	task, err = t.taskDAO.Get(t.ctx, t.taskID)
 	t.Require().Nil(err)
-	t.Equal(1, task.RunCount)
+	t.Equal(int32(1), task.RunCount)
 	t.True(time.Unix(statusRevision, 0).Equal(task.StartTime))
 	t.Equal(status, task.Status)
 	t.Equal(job.SuccessStatus.Code(), task.StatusCode)
@@ -170,7 +170,7 @@ func (t *taskDAOTestSuite) TestUpdateStatus() {
 
 	task, err = t.taskDAO.Get(t.ctx, t.taskID)
 	t.Require().Nil(err)
-	t.Equal(2, task.RunCount)
+	t.Equal(int32(2), task.RunCount)
 	t.True(time.Unix(statusRevision, 0).Equal(task.StartTime))
 	t.Equal(status, task.Status)
 	t.Equal(job.RunningStatus.Code(), task.StatusCode)

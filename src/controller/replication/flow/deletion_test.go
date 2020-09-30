@@ -15,16 +15,23 @@
 package flow
 
 import (
+	"context"
 	"testing"
 
 	"github.com/goharbor/harbor/src/replication/model"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/goharbor/harbor/src/testing/pkg/task"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
 )
 
-func TestRunOfDeletionFlow(t *testing.T) {
-	scheduler := &fakedScheduler{}
-	executionMgr := &fakedExecutionManager{}
+type deletionFlowTestSuite struct {
+	suite.Suite
+}
+
+func (d *deletionFlowTestSuite) TestRun() {
+	taskMgr := &task.Manager{}
+	taskMgr.On("Create", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(int64(1), nil)
+
 	policy := &model.Policy{
 		SrcRegistry: &model.Registry{
 			Type: model.RegistryTypeHarbor,
@@ -47,8 +54,16 @@ func TestRunOfDeletionFlow(t *testing.T) {
 			},
 		},
 	}
-	flow := NewDeletionFlow(executionMgr, scheduler, 1, policy, resources...)
-	n, err := flow.Run(nil)
-	require.Nil(t, err)
-	assert.Equal(t, 1, n)
+	flow := &deletionFlow{
+		executionID: 1,
+		policy:      policy,
+		taskMgr:     taskMgr,
+		resources:   resources,
+	}
+	err := flow.Run(context.Background())
+	d.Require().Nil(err)
+}
+
+func TestDeletionFlowTestSuite(t *testing.T) {
+	suite.Run(t, &deletionFlowTestSuite{})
 }

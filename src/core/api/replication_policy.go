@@ -17,11 +17,14 @@ package api
 import (
 	"errors"
 	"fmt"
+	"github.com/goharbor/harbor/src/jobservice/job"
+	"github.com/goharbor/harbor/src/lib/orm"
+	"github.com/goharbor/harbor/src/lib/q"
 	"net/http"
 	"strconv"
 
+	replica "github.com/goharbor/harbor/src/controller/replication"
 	"github.com/goharbor/harbor/src/replication"
-	"github.com/goharbor/harbor/src/replication/dao/models"
 	"github.com/goharbor/harbor/src/replication/event"
 	"github.com/goharbor/harbor/src/replication/model"
 	"github.com/goharbor/harbor/src/replication/registry"
@@ -237,14 +240,16 @@ func (r *ReplicationPolicyAPI) Delete() {
 }
 
 func hasRunningExecutions(policyID int64) (bool, error) {
-	_, executions, err := replication.OperationCtl.ListExecutions(&models.ExecutionQuery{
-		PolicyID: policyID,
+	executions, err := replica.Ctl.ListExecutions(orm.Context(), &q.Query{
+		Keywords: map[string]interface{}{
+			"PolicyID": policyID,
+		},
 	})
 	if err != nil {
 		return false, err
 	}
 	for _, execution := range executions {
-		if execution.Status != models.ExecutionStatusInProgress {
+		if execution.Status != job.RunningStatus.String() {
 			continue
 		}
 		return true, nil
