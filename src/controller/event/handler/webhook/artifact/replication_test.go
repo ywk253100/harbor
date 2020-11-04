@@ -27,7 +27,6 @@ import (
 	"github.com/goharbor/harbor/src/lib/q"
 	"github.com/goharbor/harbor/src/pkg/notification"
 	"github.com/goharbor/harbor/src/replication"
-	daoModels "github.com/goharbor/harbor/src/replication/dao/models"
 	"github.com/goharbor/harbor/src/replication/model"
 	projecttesting "github.com/goharbor/harbor/src/testing/controller/project"
 	replicationtesting "github.com/goharbor/harbor/src/testing/controller/replication"
@@ -40,9 +39,6 @@ type fakedNotificationPolicyMgr struct {
 }
 
 type fakedReplicationPolicyMgr struct {
-}
-
-type fakedReplicationMgr struct {
 }
 
 type fakedReplicationRegistryMgr struct {
@@ -89,46 +85,6 @@ func (f *fakedNotificationPolicyMgr) GetRelatedPolices(int64, string) ([]*models
 			ID: 0,
 		},
 	}, nil
-}
-
-func (f *fakedReplicationMgr) StartReplication(policy *model.Policy, resource *model.Resource, trigger model.TriggerType) (int64, error) {
-	return 0, nil
-}
-func (f *fakedReplicationMgr) StopReplication(int64) error {
-	return nil
-}
-func (f *fakedReplicationMgr) ListExecutions(...*daoModels.ExecutionQuery) (int64, []*daoModels.Execution, error) {
-	return 0, nil, nil
-}
-func (f *fakedReplicationMgr) GetExecution(int64) (*daoModels.Execution, error) {
-	return &daoModels.Execution{
-		PolicyID: 1,
-		Trigger:  "manual",
-	}, nil
-}
-func (f *fakedReplicationMgr) ListTasks(...*daoModels.TaskQuery) (int64, []*daoModels.Task, error) {
-	return 0, nil, nil
-}
-func (f *fakedReplicationMgr) GetTask(id int64) (*daoModels.Task, error) {
-	if id == 1 {
-		return &daoModels.Task{
-			ExecutionID: 1,
-			// project info not included when replicating with docker registry
-			SrcResource: "alpine:[v1]",
-			DstResource: "gxt/alpine:[v1] ",
-		}, nil
-	}
-	return &daoModels.Task{
-		ExecutionID: 1,
-		SrcResource: "library/alpine:[v1]",
-		DstResource: "gxt/alpine:[v1] ",
-	}, nil
-}
-func (f *fakedReplicationMgr) UpdateTaskStatus(id int64, status string, statusRevision int64, statusCondition ...string) error {
-	return nil
-}
-func (f *fakedReplicationMgr) GetTaskLog(int64) ([]byte, error) {
-	return nil, nil
 }
 
 // Create new policy
